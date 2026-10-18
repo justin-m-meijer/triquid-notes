@@ -22,11 +22,7 @@ desktop / web client.
 | v0.103.0        | 11.15.0         | `https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.min.js` |
 | v0.102.x        | 10.9.3          | `https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js` |
 
-To upgrade:
-
-```bash
-Scripts/bump_vendor.sh mermaid <VERSION>
-```
+To upgrade, download the new `mermaid.min.js` from the source URL pattern above and replace the file.
 
 The bundle declares `globalThis.mermaid = …` at the end, which is what
 the HTML files consume via `window.mermaid.initialize`, `.run`, `.render`.
@@ -36,8 +32,8 @@ default look. Every `mermaid.initialize` call (`mermaid-viewer.html`,
 `mermaid-editor.html`, `editor.html`, `HTMLNoteView.swift`) pins
 `layout: 'dagre'` and `look: 'classic'`, as Trilium v0.106 does, so stored
 diagrams keep their layout; a diagram's front matter can still ask for
-`layout: elk`. Mermaid 12 targets Safari 17.4+, which is why the app's
-deployment target is iOS 17.4.
+`layout: elk`. Mermaid 12 targets Safari 17.4+; the app's deployment target
+(iOS 26) is well above that.
 
 ## `MindElixir.iife.js` / `MindElixir.css`
 
@@ -49,11 +45,8 @@ Vendored MindElixir runtime for mind-map notes (`mindmap-editor.html`,
 | v0.105.0        | 5.15.1             | `https://cdn.jsdelivr.net/npm/mind-elixir@5.15.1/dist/MindElixir.iife.js` |
 | v0.103.x        | 5.10.0             | `https://cdn.jsdelivr.net/npm/mind-elixir@5.10.0/dist/MindElixir.iife.js` |
 
-To upgrade (IIFE + CSS):
-
-```bash
-Scripts/bump_vendor.sh mind-elixir <VERSION>
-```
+To upgrade, download `dist/MindElixir.iife.js` and `dist/MindElixir.css` for the new version from the
+same CDN and replace both files.
 
 The IIFE assigns `MindElixir.default` (constructor) plus `DARK_THEME` /
 `SIDE`. Editor/viewer HTML uses `mind.container`, `mind.move(dx, dy)`,
@@ -80,13 +73,9 @@ Replaced by MapLibre GL for geo-map notes (see below).
 MapLibre GL **6.10.0** for geo-map editor/viewer (`geomap-*.html`). Matches Trilium v0.106.
 
 MapLibre 6 ships as ES modules only, and WKWebView runs neither module scripts nor module workers on the
-`file://` pages the maps load from. `Scripts/build_maplibre.sh` therefore rebuilds the release into one classic
-script: it sets `window.maplibregl` as the 5.x UMD build did, and starts MapLibre's worker from a blob URL
-(the `#.cjs` fragment makes MapLibre start it as a classic worker). To upgrade:
-
-```bash
-Scripts/build_maplibre.sh <VERSION>   # needs node and canvas-editor-build's esbuild (npm install there)
-```
+`file://` pages the maps load from. The bundled file is therefore the release rebuilt with esbuild into one
+classic script: it sets `window.maplibregl` as the 5.x UMD build did, and starts MapLibre's worker from a blob
+URL (the `#.cjs` fragment makes MapLibre start it as a classic worker). An upgrade has to be rebuilt the same way.
 
 After an upgrade, check a geo map with both styles (OpenStreetMap raster and VersaTiles vector, whose
 style JSON still uses legacy filters), pins, GPX tracks, shapes, and the 3D view.

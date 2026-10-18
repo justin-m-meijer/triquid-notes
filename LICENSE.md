@@ -15,5 +15,5 @@ published under the Mozilla Public License 2.0. Two licenses apply in this repos
   Required Notice: Copyright 2026 Justin Meijer (https://www.justinmeijer.nl)
 
 Third-party libraries bundled with the app (TipTap, KaTeX, Mermaid, Excalidraw, Univer and others in
-`Trinote/Resources`) keep their own licenses. The Univer editor's npm dependencies are not included; run
+`Trinote/Resources`) keep their own licenses; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). The Univer editor's npm dependencies are not included; run
 `npm ci` in `Trinote/Resources/univer-editor-build` to install them.
