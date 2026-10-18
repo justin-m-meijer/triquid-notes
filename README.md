@@ -1,162 +1,82 @@
 # Triquid Notes
 
-Triquid Notes is a native Trilium client for iPhone, iPhone Duo, iPad and Mac, made by
-[Justin Meijer](https://www.justinmeijer.nl) as a hobby project. It is a fork of
-[Trinote](https://github.com/StephenArg/Trinote) by StephenArg, and the README below is still mostly Trinote's.
+A native client for self-hosted [Trilium](https://github.com/TriliumNext/Trilium) notes, for iPhone,
+iPad and Mac (as the iPad app on Apple silicon). Made by [Justin Meijer](https://www.justinmeijer.nl)
+as a hobby project.
 
-- On the App Store: https://apps.apple.com/app/id6816314389
-- More about it: https://www.justinmeijer.nl/apps/triquid-notes/
+- App Store: https://apps.apple.com/app/id6816314389
+- Website: https://www.justinmeijer.nl/apps/triquid-notes/
 - Questions, ideas or bugs: info@justinmeijer.nl, or open an issue here.
 
-Licensing is mixed: Trinote's files stay under MPL 2.0, the files written for Triquid Notes are under the
-PolyForm Noncommercial License 1.0.0. See [LICENSE.md](LICENSE.md).
-
----
-
-# Trinote — iOS Trilium Client
-
-<img width="360" height="360" alt="AppIcon-1024-dark" src="https://github.com/user-attachments/assets/d94bb6a9-904e-49b6-9261-213809fbd248" />
-
-
-A native iOS client for self-hosted [TriliumNext](https://github.com/TriliumNext/Trilium) note-taking servers.
+Triquid Notes is a fork of [Trinote](https://github.com/StephenArg/Trinote) by StephenArg. That is why
+the code and the Xcode targets are still called `Trinote`.
 
 ## Features
 
-- **Connect** with the same **web session** as Trilium (password + cookies + CSRF), not ETAPI
-- **Browse** the full note tree with lazy loading and proper clone/branch semantics
-- **Read** text notes (HTML), code notes, image notes, and file notes
-- **Search** full-text across all notes via the server search API
-- **Edit** note titles, content (HTML source or code), create/delete notes
-- **Attachments** — upload from Photos/Files, download, share
-- **Office & EPUB previews** — `.docx`, `.xlsx`, `.pptx`, ODF, RTF and EPUB open in-app (Trilium **v0.105+**; falls back to Quick Look on older servers)
-- **Offline cache** — tree structure and recently opened notes cached locally
-- **Multiple servers** — save and switch between server profiles
-- **Dark mode** and numerous color options
+- Signs in like the Trilium web app (password, optional TOTP, or SSO), not through ETAPI
+- Browse the full note tree, including cloned notes that appear in more than one place
+- Read and edit text, code, image and file notes; create and delete notes
+- Full-text search through your server
+- Attachments: upload from Photos or Files, download, share
+- In-app previews of Office documents, ODF, RTF and EPUB (Trilium 0.105+, Quick Look on older servers)
+- Share extension: send web pages, text, images and files from other apps into Trilium
+- Offline cache of the tree and recently opened notes
+- Several servers, with switching between them
 
-## Requirements
+## Building it yourself
 
-- iOS 26.0+
-- Xcode 16.0+
-- Swift 5.9+
-- A self-hosted TriliumNext server (**v0.95.x – v0.106.x** supported; native `/api` routes are pinned in `local_notes/trilium_native_api_v0.95.md`, with later-release deltas noted at the bottom of that file)
+You need:
 
-## Setup
-
-### 1. Generate the Xcode project
-
-This project uses [XcodeGen](https://github.com/yonaskolb/XcodeGen) to generate the `.xcodeproj`:
+- A Mac with **Xcode 26** or later (the app targets iOS 26 and uses Swift 6)
+- [XcodeGen](https://github.com/yonaskolb/XcodeGen), which generates the Xcode project from `project.yml`
 
 ```bash
 brew install xcodegen
-cd Trinote
+git clone https://github.com/justin-m-meijer/triquid-notes.git
+cd triquid-notes
 xcodegen generate
-```
-
-### 2. Open in Xcode
-
-```bash
 open Trinote.xcodeproj
 ```
 
-### 3. Configure signing
+Then:
 
-- Open the project settings
-- Select the **Trinote** target
-- Under **Signing & Capabilities**, set your development team
-- Adjust the bundle identifier if needed
+1. Select the **Trinote** scheme and an iOS 26 simulator, and press **⌘R**. The simulator needs no signing.
+2. To run on your own device, open **Signing & Capabilities** for both the **Trinote** and
+   **TrinoteShare** targets, choose your own team, and change the bundle identifiers
+   (`com.justinmeijer.nl.liquid-notes` and `…liquid-notes.fileshare`) to ones of your own.
 
-### 4. Build & Run
+Do not edit the generated `Trinote.xcodeproj` by hand: change `project.yml` and run `xcodegen generate`
+again. Swift Package Manager fetches the one dependency, Highlightr, on the first build.
 
-Select an iOS 26+ simulator or device and press **Cmd+R**.
+## Connecting to your server
 
-### Version & build number
+You need a self-hosted Trilium server, version 0.95 to 0.106.
 
-`MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` live in **`project.yml`** (XcodeGen’s source of truth). You can bump them either way:
+- **Password:** enter the server address you use in the browser and your Trilium password. TOTP works.
+- **SSO (OpenID / OAuth)**, e.g. Authelia, Authentik, Keycloak or PocketID: this needs a small one-time
+  addition on your server. See [docs/sso-setup.md](docs/sso-setup.md).
+- **Self-signed certificate:** install and trust your CA on the device first
+  (Settings → General → VPN & Device Management).
 
-1. **In Xcode** — Trinote target → General → Identity → Version / Build, then build or run (`Cmd+R`). That build ships the new values in the app (and share extension), and a pre-build script writes them back into `project.yml` so a later `xcodegen generate` will not revert them.
-2. **In `project.yml`** — edit the two keys under `settings.base`, then run `xcodegen generate` before building.
+Protected notes still need your Trilium protected-notes password after you sign in. They can be read
+but not created in the app.
 
-To sync `project.yml` from the current Xcode project without building:
-
-```bash
-./Scripts/sync_project_yml_version.sh
-```
-
-If you edit `project.yml` without running `xcodegen generate`, the next build may overwrite your YAML changes with the values still in the `.xcodeproj`.
-
-## Connecting to a Server
-
-### Password sign-in
-
-1. Enter your server URL (same origin you use in the browser)
-2. Enter your Trilium **password** (same as the web UI)
-3. Optional: **Remember me** — matches Trilium’s longer-lived session cookie
-4. **TOTP** is supported for password sign-in
-
-### SSO sign-in (OpenID / OAuth)
-
-If your Trilium server uses **built-in OAuth/OpenID** (Authelia, Authentik, Keycloak, PocketID, Google OIDC, etc.), see **[docs/sso-setup.md](docs/sso-setup.md)** for the full user setup guide (one-time server handler + app sign-in flow).
-
-Short version:
-
-1. Add the `trinote-sso-handoff` custom request handler on your Trilium server (script in `docs/trinote-sso-handoff.js`).
-2. In Trinote, enter your server URL and tap **Sign in with SSO**.
-3. Complete sign-in in Safari, return to Trinote, tap **Continue**.
-
-Optional: **Cloudflare Access** service-token credentials under Advanced if API calls still need them after handoff.
-
-Protected notes still require your Trilium **document password** after sign-in — SSO only replaces server login.
-
-### Self-signed certificates
-
-If your server uses a self-signed certificate, you'll need to install and trust
-the CA certificate on your iOS device first (Settings → General → VPN & Device
-Management). The app allows arbitrary HTTP loads via ATS to support local networks.
-
-## Architecture
+## Where things are
 
 ```
-Trinote/
-├── App/                     # App entry, state, tab navigation
-├── Core/
-│   ├── API/                 # TriliumClient (session + `/api`), models, WebSocket
-│   ├── Models/              # Domain models, SwiftData cache models
-│   ├── Persistence/         # SwiftData container, cache manager
-│   ├── Security/            # Keychain token storage
-│   └── Utilities/           # Logger, extensions
-├── Features/
-│   ├── Auth/                # Login, server profile management
-│   ├── Tree/                # Note tree browsing
-│   ├── Search/              # Full-text search with recents
-│   ├── NoteDetail/          # Note viewing, editing, renderers
-│   ├── Attachments/         # Photo/file upload
-│   └── Settings/            # Settings, recents list
-└── Resources/               # Info.plist, Assets
+Trinote/App/          app entry point and navigation
+Trinote/Core/         API client, sync, cache, models and other shared logic
+Trinote/Features/     the screens: tree, note view and editor, search, settings, …
+Trinote/Resources/    Info.plist, assets, translations and the bundled web editors
+TrinoteShare/         the share extension
+TrinoteShared/        code used by both the app and the share extension
+project.yml           XcodeGen project definition
 ```
-
-### Key Design Decisions
-
-- **Native `/api` + sync** — session cookies, `sync/check` + `sync/changed`, entity-change cursor; WebSocket debounces incremental sync
-- **Notes ≠ Branches** — notes and branches are separate entities; a note can appear in multiple tree locations (clones)
-- **Lazy tree loading** — fetches children on demand to avoid loading the entire tree upfront
-- **Cache-first offline** — falls back to cached data when the server is unreachable
-- **No embedded server** — pure client that talks to your existing Trilium server
-
-## Known Limitations
-- **Protected notes** are able to be read (when password is entered) but not generated on this client
-- **Search is server-side only** — no offline full-text search. Can jump to text references
-
----
-
-If you want to discuss future work on Trinote (new features, bug fixes, style changes, feedback in general) you can join the [discord](https://discord.com/invite/ghjJG56EUS).
-
----
-
-<a href="https://buymeacoffee.com/vero.fide">Buy me a coffee</a> ☕️ 
-
-<img width="100" height="100" alt="qr-code" src="https://github.com/user-attachments/assets/2ebab2dd-4bf6-4d86-a29c-4cf75fcf834e" />
-
 
 ## License
 
-This project is not affiliated with TriliumNext. It is a community-built iOS client.
+Licensing is mixed. Files that come from Trinote stay under the Mozilla Public License 2.0, and the
+files written for Triquid Notes are under the PolyForm Noncommercial License 1.0.0. See
+[LICENSE.md](LICENSE.md) for which is which.
+
+Triquid Notes is not affiliated with or endorsed by the Trilium project.
