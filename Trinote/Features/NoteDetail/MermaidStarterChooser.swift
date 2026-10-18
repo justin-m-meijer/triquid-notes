@@ -2,11 +2,7 @@ import SwiftUI
 
 /// A starter-template chooser shown in `MermaidEditorView` when the note body is empty.
 /// Tapping a chip writes the template into `editableContent`; once content is non-empty
-/// the chooser is replaced by the live preview pane (mirrors Trilium desktop v0.103+ UX).
-///
-/// Templates are ported from upstream `apps/client/src/widgets/type_widgets/mermaid/sample_diagrams.ts`
-/// in `TriliumNext/Trilium` v0.103.0 so a note created from the chip and synced back to desktop
-/// renders identically there.
+/// the chooser is replaced by the live preview pane.
 struct MermaidStarterChooser: View {
     /// Invoked with the raw Mermaid source when the user taps a template.
     let onSelect: (String) -> Void
@@ -93,9 +89,7 @@ struct MermaidSampleDiagram: Identifiable, Sendable {
 }
 
 extension MermaidSampleDiagram {
-    /// Sample sources ordered to roughly match Trilium desktop's panel layout, leading with the
-    /// types most users reach for first. Sources are kept verbatim from upstream so round-tripping
-    /// between Trinote and Trilium desktop never reformats the diagram.
+    /// One short example per diagram type, written for this app. The most common types come first.
     static let all: [MermaidSampleDiagram] = [
         MermaidSampleDiagram(
             id: "flowchart",
@@ -103,11 +97,13 @@ extension MermaidSampleDiagram {
             iconName: "arrow.triangle.branch",
             content: """
             flowchart TD
-                A[Christmas] -->|Get money| B(Go shopping)
-                B --> C{Let me think}
-                C -->|One| D[Laptop]
-                C -->|Two| E[iPhone]
-                C -->|Three| F[fa:fa-car Car]
+                Idea[Idea for a note] --> Where{Where does it belong?}
+                Where -->|Project| Project[Add to project notes]
+                Where -->|Someday| Inbox[Drop in inbox]
+                Where -->|Not sure| Tag[Tag it #review]
+                Project --> Done((Saved))
+                Inbox --> Done
+                Tag --> Done
             """
         ),
         MermaidSampleDiagram(
@@ -116,10 +112,16 @@ extension MermaidSampleDiagram {
             iconName: "arrow.left.arrow.right",
             content: """
             sequenceDiagram
-                Alice->>+John: Hello John, how are you?
-                Alice->>+John: John, can you hear me?
-                John-->>-Alice: Hi Alice, I can hear you!
-                John-->>-Alice: I feel great!
+                actor Reader
+                participant App
+                participant Server
+                Reader->>App: Open note
+                App->>Server: Fetch latest version
+                Server-->>App: Note content
+                App-->>Reader: Show note
+                Reader->>App: Edit and save
+                App->>Server: Upload changes
+                Server-->>App: Saved
             """
         ),
         MermaidSampleDiagram(
@@ -128,26 +130,21 @@ extension MermaidSampleDiagram {
             iconName: "square.stack.3d.up",
             content: """
             classDiagram
-                Animal <|-- Duck
-                Animal <|-- Fish
-                Animal <|-- Zebra
-                Animal : +int age
-                Animal : +String gender
-                Animal: +isMammal()
-                Animal: +mate()
-                class Duck{
-                    +String beakColor
-                    +swim()
-                    +quack()
+                class Notebook {
+                    +String title
+                    +addNote(Note note)
                 }
-                class Fish{
-                    -int sizeInFeet
-                    -canEat()
+                class Note {
+                    +String title
+                    +String body
+                    +Date modified
+                    +rename(String title)
                 }
-                class Zebra{
-                    +bool is_wild
-                    +run()
+                class Tag {
+                    +String name
                 }
+                Notebook "1" o-- "*" Note : contains
+                Note "*" -- "*" Tag : labelled with
             """
         ),
         MermaidSampleDiagram(
@@ -156,12 +153,12 @@ extension MermaidSampleDiagram {
             iconName: "circle.dotted",
             content: """
             stateDiagram-v2
-                [*] --> Still
-                Still --> [*]
-                Still --> Moving
-                Moving --> Still
-                Moving --> Crash
-                Crash --> [*]
+                [*] --> Draft
+                Draft --> Review : ready
+                Review --> Draft : changes needed
+                Review --> Published : approved
+                Published --> Archived : outdated
+                Archived --> [*]
             """
         ),
         MermaidSampleDiagram(
@@ -170,27 +167,23 @@ extension MermaidSampleDiagram {
             iconName: "tablecells",
             content: """
             erDiagram
-                CUSTOMER ||--o{ ORDER : places
-                ORDER ||--|{ ORDER_ITEM : contains
-                PRODUCT ||--o{ ORDER_ITEM : includes
-                CUSTOMER {
-                    string id
+                AUTHOR ||--o{ BOOK : writes
+                BOOK ||--|{ CHAPTER : has
+                BOOK }o--o{ GENRE : "belongs to"
+                AUTHOR {
                     string name
-                    string email
+                    int born
                 }
-                ORDER {
-                    string id
-                    date orderDate
-                    string status
+                BOOK {
+                    string title
+                    int year
                 }
-                PRODUCT {
-                    string id
+                CHAPTER {
+                    int number
+                    string heading
+                }
+                GENRE {
                     string name
-                    float price
-                }
-                ORDER_ITEM {
-                    int quantity
-                    float price
                 }
             """
         ),
@@ -199,10 +192,12 @@ extension MermaidSampleDiagram {
             name: String(localized: "Pie", comment: "Mermaid sample diagram name"),
             iconName: "chart.pie",
             content: """
-            pie title Pets adopted by volunteers
-                "Dogs" : 386
-                "Cats" : 85
-                "Rats" : 15
+            pie title Where my week went
+                "Work" : 40
+                "Sleep" : 56
+                "Family" : 30
+                "Sport" : 6
+                "Reading" : 8
             """
         ),
         MermaidSampleDiagram(
@@ -211,22 +206,18 @@ extension MermaidSampleDiagram {
             iconName: "brain",
             content: """
             mindmap
-                root((mindmap))
-                    Origins
-                        Long history
-                        ::icon(fa fa-book)
-                        Popularisation
-                            British popular psychology author Tony Buzan
-                    Research
-                        On effectiveness and features
-                        On Automatic creation
-                    Uses
-                        Creative techniques
-                        Strategic planning
-                        Argument mapping
-                    Tools
-                        Pen and paper
-                        Mermaid
+              root((Garden))
+                Vegetables
+                  Tomatoes
+                  Beans
+                  Courgettes
+                Herbs
+                  Basil
+                  Mint
+                Jobs
+                  Watering
+                  Weeding
+                  Compost
             """
         ),
         MermaidSampleDiagram(
@@ -235,14 +226,17 @@ extension MermaidSampleDiagram {
             iconName: "calendar.badge.clock",
             content: """
             gantt
-                title A Gantt Diagram
+                title Kitchen renovation
                 dateFormat YYYY-MM-DD
-                section Section
-                A task           :a1, 2014-01-01, 30d
-                Another task     :after a1 , 20d
-                section Another
-                Task in sec      :2014-01-12 , 12d
-                another task     : 24d
+                section Preparation
+                    Choose design     :done,    design, 2026-03-01, 14d
+                    Order cabinets    :done,    order,  after design, 3d
+                section Work
+                    Remove old kitchen :active, demo, 2026-04-06, 4d
+                    Plumbing and power :        wires, after demo, 5d
+                    Install cabinets   :        fit, after wires, 6d
+                section Finish
+                    Paint and tiles    :        paint, after fit, 5d
             """
         ),
         MermaidSampleDiagram(
@@ -251,12 +245,12 @@ extension MermaidSampleDiagram {
             iconName: "clock",
             content: """
             timeline
-                title History of Social Media Platform
-                2002 : LinkedIn
-                2004 : Facebook
-                     : Google
-                2005 : YouTube
-                2006 : Twitter
+                title History of the bicycle
+                1817 : Running machine without pedals
+                1860s : Pedals on the front wheel
+                1885 : Chain-driven safety bicycle
+                1888 : Air-filled tyres
+                1990s : Electric bikes appear
             """
         ),
         MermaidSampleDiagram(
@@ -264,29 +258,15 @@ extension MermaidSampleDiagram {
             name: String(localized: "Kanban", comment: "Mermaid sample diagram name"),
             iconName: "rectangle.split.3x1",
             content: """
-            ---
-            config:
-              kanban:
-                ticketBaseUrl: 'https://github.com/mermaid-js/mermaid/issues/#TICKET#'
-            ---
             kanban
-                Todo
-                    [Create Documentation]
-                    docs[Create Blog about the new diagram]
-                [In progress]
-                    id6[Create renderer so that it works in all cases. We also add some extra text here for testing purposes. And some more just for the extra flare.]
-                id9[Ready for deploy]
-                    id8[Design grammar]@{ assigned: 'knsv' }
-                id10[Ready for test]
-                    id4[Create parsing tests]@{ ticket: 2038, assigned: 'K.Sveidqvist', priority: 'High' }
-                    id66[last item]@{ priority: 'Very Low', assigned: 'knsv' }
-                id11[Done]
-                    id5[define getData]
-                    id2[Title of diagram is more than 100 chars when user duplicates diagram with 100 char]@{ ticket: 2036, priority: 'Very High'}
-                    id3[Update DB function]@{ ticket: 2037, assigned: knsv, priority: 'High' }
-
-                id12[Can't reproduce]
-                    id3[Weird flickering in Firefox]
+                todo[To do]
+                    t1[Book train tickets]
+                    t2[Renew passport]@{ priority: 'High' }
+                doing[In progress]
+                    t3[Plan the route]@{ assigned: 'Sam' }
+                done[Done]
+                    t4[Pick the dates]
+                    t5[Ask for time off]
             """
         ),
         MermaidSampleDiagram(
@@ -295,20 +275,19 @@ extension MermaidSampleDiagram {
             iconName: "point.3.connected.trianglepath.dotted",
             content: """
             gitGraph
-                commit
-                branch develop
-                checkout develop
-                commit
-                commit
+                commit id: "first draft"
+                branch photos
+                checkout photos
+                commit id: "add photos"
                 checkout main
-                merge develop
-                commit
-                branch feature
-                checkout feature
-                commit
-                commit
+                commit id: "fix typos"
+                merge photos
+                branch translation
+                checkout translation
+                commit id: "dutch version"
                 checkout main
-                merge feature
+                merge translation
+                commit id: "publish"
             """
         ),
         MermaidSampleDiagram(
@@ -317,14 +296,15 @@ extension MermaidSampleDiagram {
             iconName: "figure.walk",
             content: """
             journey
-                title My working day
-                section Go to work
-                    Make tea: 5: Me
-                    Go upstairs: 3: Me
-                    Do work: 1: Me, Cat
-                section Go home
-                    Go downstairs: 5: Me
-                    Sit down: 5: Me
+                title Morning commute
+                section Leave home
+                    Pack bag: 3: Me
+                    Find keys: 1: Me
+                section Travel
+                    Catch the train: 4: Me
+                    Read on the train: 5: Me
+                section Arrive
+                    Get coffee: 5: Me, Colleague
             """
         ),
         MermaidSampleDiagram(
@@ -333,19 +313,18 @@ extension MermaidSampleDiagram {
             iconName: "square.split.2x2",
             content: """
             quadrantChart
-                title Reach and engagement of campaigns
-                x-axis Low Reach --> High Reach
-                y-axis Low Engagement --> High Engagement
-                quadrant-1 We should expand
-                quadrant-2 Need to promote
-                quadrant-3 Re-evaluate
-                quadrant-4 May be improved
-                Campaign A: [0.3, 0.6]
-                Campaign B: [0.45, 0.23]
-                Campaign C: [0.57, 0.69]
-                Campaign D: [0.78, 0.34]
-                Campaign E: [0.40, 0.34]
-                Campaign F: [0.35, 0.78]
+                title Weekend tasks
+                x-axis Low effort --> High effort
+                y-axis Low value --> High value
+                quadrant-1 Plan it
+                quadrant-2 Do it now
+                quadrant-3 Skip it
+                quadrant-4 Delegate
+                Clean the gutters: [0.75, 0.55]
+                Call grandma: [0.2, 0.9]
+                Sort old cables: [0.35, 0.2]
+                Paint the fence: [0.85, 0.7]
+                Water the plants: [0.1, 0.6]
             """
         ),
         MermaidSampleDiagram(
@@ -354,11 +333,11 @@ extension MermaidSampleDiagram {
             iconName: "chart.xyaxis.line",
             content: """
             xychart-beta
-                title "Sales Revenue"
-                x-axis [jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec]
-                y-axis "Revenue (in $)" 4000 --> 11000
-                bar [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
-                line [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
+                title "Kilometres cycled per month"
+                x-axis [Jan, Feb, Mar, Apr, May, Jun]
+                y-axis "Kilometres" 0 --> 400
+                bar [80, 95, 160, 210, 300, 340]
+                line [80, 95, 160, 210, 300, 340]
             """
         ),
         MermaidSampleDiagram(
@@ -366,28 +345,15 @@ extension MermaidSampleDiagram {
             name: String(localized: "Sankey", comment: "Mermaid sample diagram name"),
             iconName: "arrow.right.to.line.compact",
             content: """
-            ---
-            config:
-              sankey:
-                showValues: false
-            ---
             sankey-beta
 
-            Agricultural 'waste',Bio-conversion,124.729
-            Bio-conversion,Liquid,0.597
-            Bio-conversion,Losses,26.862
-            Bio-conversion,Solid,280.322
-            Bio-conversion,Gas,81.144
-            Biofuel imports,Liquid,35
-            Biomass imports,Solid,35
-            Coal imports,Coal,11.606
-            Coal reserves,Coal,63.965
-            Coal,Solid,75.571
-            District heating,Industry,10.639
-            District heating,Heating and cooling - commercial,22.505
-            District heating,Heating and cooling - homes,46.184
-            Electricity grid,Over generation / exports,104.453
-            Electricity grid,Heating and cooling - homes,113.726
+            Salary,Housing,1100
+            Salary,Groceries,450
+            Salary,Transport,180
+            Salary,Savings,400
+            Salary,Leisure,270
+            Leisure,Eating out,150
+            Leisure,Hobbies,120
             """
         ),
         MermaidSampleDiagram(
@@ -396,13 +362,15 @@ extension MermaidSampleDiagram {
             iconName: "square.grid.2x2",
             content: """
             treemap-beta
-            "Section 1"
-                "Leaf 1.1": 12
-                "Section 1.2"
-                    "Leaf 1.2.1": 12
-            "Section 2"
-                "Leaf 2.1": 20
-                "Leaf 2.2": 25
+            "Photos"
+                "2025": 40
+                "2026"
+                    "Holiday": 25
+                    "Family": 18
+            "Documents"
+                "Taxes": 6
+                "Manuals": 4
+            "Music": 30
             """
         ),
         MermaidSampleDiagram(
@@ -411,16 +379,14 @@ extension MermaidSampleDiagram {
             iconName: "list.bullet.indent",
             content: """
             treeView-beta
-                "src"
-                    "components"
-                        "Button.tsx"
-                        "Modal.tsx"
-                    "services"
-                        "api.ts"
-                        "utils.ts"
-                    "index.ts"
-                "package.json"
-                "README.md"
+                "Recipes"
+                    "Breakfast"
+                        "Pancakes"
+                        "Overnight oats"
+                    "Dinner"
+                        "Lasagne"
+                        "Vegetable curry"
+                    "Shopping list"
             """
         ),
         MermaidSampleDiagram(
@@ -429,17 +395,14 @@ extension MermaidSampleDiagram {
             iconName: "circle.circle",
             content: """
             venn-beta
-                title Web Dev
-                set Frontend
-                    text React
-                    text shadcn-ui
-                    text Firebase
-                set Backend
-                    text Hono
-                    text PostgreSQL
-                    text S3
-                    text Lambda
-                union Frontend,Backend["APIs"]
+                title Pets we like
+                set Cats
+                    text Quiet
+                    text Independent
+                set Dogs
+                    text Loyal
+                    text Playful
+                union Cats,Dogs["Cuddly"]
             """
         ),
         MermaidSampleDiagram(
@@ -448,25 +411,17 @@ extension MermaidSampleDiagram {
             iconName: "fish",
             content: """
             ishikawa-beta
-                Blurry Photo
-                    Process
-                        Out of focus
-                        Shutter speed too slow
-                        Protective film not removed
-                        Beautification filter applied
-                    User
-                        Shaky hands
-                    Equipment
-                        LENS
-                            Inappropriate lens
-                            Damaged lens
-                            Dirty lens
-                        SENSOR
-                            Damaged sensor
-                            Dirty sensor
+                Bread did not rise
+                    Ingredients
+                        Old yeast
+                        Too much salt
+                    Method
+                        Not kneaded long enough
+                        Dough too dry
                     Environment
-                        Subject moved too quickly
-                        Too dark
+                        Kitchen too cold
+                    Time
+                        Proved too briefly
             """
         ),
         MermaidSampleDiagram(
@@ -475,25 +430,22 @@ extension MermaidSampleDiagram {
             iconName: "map",
             content: """
             wardley-beta
-                title Tea Shop
+                title Home coffee
 
-                anchor Customers [0.95, 0.63]
-                anchor Business [0.95, 0.27]
+                anchor Me [0.95, 0.5]
 
-                component Cup of Tea [0.79, 0.61]
-                component Tea [0.63, 0.81]
-                component Cup [0.57, 0.46]
-                component Water [0.52, 0.89]
-                component Kettle [0.47, 0.53]
-                component Power [0.36, 0.72]
+                component Morning coffee [0.8, 0.45]
+                component Beans [0.6, 0.75]
+                component Grinder [0.5, 0.4]
+                component Espresso machine [0.45, 0.55]
+                component Electricity [0.2, 0.9]
 
-                Customers -> Cup of Tea
-                Business -> Cup of Tea
-                Cup of Tea -> Tea
-                Cup of Tea -> Cup
-                Cup of Tea -> Water
-                Water -> Kettle
-                Kettle -> Power
+                Me -> Morning coffee
+                Morning coffee -> Beans
+                Morning coffee -> Grinder
+                Morning coffee -> Espresso machine
+                Grinder -> Electricity
+                Espresso machine -> Electricity
             """
         ),
         MermaidSampleDiagram(
@@ -502,16 +454,16 @@ extension MermaidSampleDiagram {
             iconName: "building.2",
             content: """
             architecture-beta
-                group api(cloud)[API]
+                group home(cloud)[Home network]
 
-                service db(database)[Database] in api
-                service disk1(disk)[Storage] in api
-                service disk2(disk)[Storage] in api
-                service server(server)[Server] in api
+                service phone(internet)[Phone]
+                service router(server)[Router] in home
+                service nas(disk)[NAS] in home
+                service notes(database)[Notes server] in home
 
-                db:L -- R:server
-                disk1:T -- B:server
-                disk2:T -- B:db
+                phone:R -- L:router
+                router:R -- L:notes
+                notes:B -- T:nas
             """
         ),
         MermaidSampleDiagram(
@@ -520,19 +472,13 @@ extension MermaidSampleDiagram {
             iconName: "rectangle.stack",
             content: """
             block-beta
-            columns 1
-                db(("DB"))
-                blockArrowId6<["   "]>(down)
-                block:ID
-                    A
-                    B["A wide one in the middle"]
-                    C
-                end
-                space
-                D
-                ID --> D
-                C --> D
-                style B fill:#969,stroke:#333,stroke-width:4px
+            columns 3
+                Inbox["Inbox"] Sort["Sort"] Archive["Archive"]
+                space:3
+                Read["Read later"]:3
+                Inbox --> Sort
+                Sort --> Archive
+                Sort --> Read
             """
         ),
         MermaidSampleDiagram(
@@ -541,38 +487,15 @@ extension MermaidSampleDiagram {
             iconName: "building.columns",
             content: """
             C4Context
-                title System Context diagram for Internet Banking System
-                Enterprise_Boundary(b0, "BankBoundary0") {
-                    Person(customerA, "Banking Customer A", "A customer of the bank, with personal bank accounts.")
-                    Person(customerB, "Banking Customer B")
-                    Person_Ext(customerC, "Banking Customer C", "desc")
+                title Notes app in context
+                Person(user, "Note taker", "Writes and reads notes on phone and laptop.")
+                System(app, "Notes app", "Shows, edits and searches notes.")
+                System_Ext(server, "Notes server", "Stores every note and syncs devices.")
+                System_Ext(mail, "E-mail", "Sends sign-in links.")
 
-                    Person(customerD, "Banking Customer D", "A customer of the bank, with personal bank accounts.")
-
-                    System(SystemAA, "Internet Banking System", "Allows customers to view information about their bank accounts, and make payments.")
-
-                    Enterprise_Boundary(b1, "BankBoundary") {
-                        SystemDb_Ext(SystemE, "Mainframe Banking System", "Stores all of the core banking information about customers, accounts, transactions, etc.")
-
-                        System_Boundary(b2, "BankBoundary2") {
-                            System(SystemA, "Banking System A")
-                            System(SystemB, "Banking System B", "A system of the bank, with personal bank accounts. next line.")
-                        }
-
-                        System_Ext(SystemC, "E-mail system", "The internal Microsoft Exchange e-mail system.")
-                        SystemDb(SystemD, "Banking System D Database", "A system of the bank, with personal bank accounts.")
-
-                        Boundary(b3, "BankBoundary3", "boundary") {
-                            SystemQueue(SystemF, "Banking System F Queue", "A system of the bank.")
-                            SystemQueue_Ext(SystemG, "Banking System G Queue", "A system of the bank, with personal bank accounts.")
-                        }
-                    }
-                }
-
-                BiRel(customerA, SystemAA, "Uses")
-                BiRel(SystemAA, SystemE, "Uses")
-                Rel(SystemAA, SystemC, "Sends e-mails", "SMTP")
-                Rel(SystemC, customerA, "Sends e-mails to")
+                Rel(user, app, "Uses")
+                Rel(app, server, "Reads and writes notes", "HTTPS")
+                Rel(server, mail, "Sends messages through")
             """
         ),
         MermaidSampleDiagram(
@@ -581,15 +504,15 @@ extension MermaidSampleDiagram {
             iconName: "scope",
             content: """
             ---
-            title: "Grades"
+            title: "Holiday destinations"
             ---
             radar-beta
-                axis m["Math"], s["Science"], e["English"]
-                axis h["History"], g["Geography"], a["Art"]
-                curve a["Alice"]{85, 90, 80, 70, 75, 90}
-                curve b["Bob"]{70, 75, 85, 80, 90, 85}
+                axis w["Weather"], f["Food"], c["Culture"]
+                axis n["Nature"], p["Price"], t["Travel time"]
+                curve a["Lisbon"]{8, 9, 8, 6, 7, 7}
+                curve b["Oslo"]{4, 6, 7, 9, 3, 6}
 
-                max 100
+                max 10
                 min 0
             """
         ),
@@ -599,26 +522,15 @@ extension MermaidSampleDiagram {
             iconName: "rectangle.grid.1x2",
             content: """
             ---
-            title: "TCP Packet"
+            title: "Example message header"
             ---
             packet
-            0-15: "Source Port"
-            16-31: "Destination Port"
-            32-63: "Sequence Number"
-            64-95: "Acknowledgment Number"
-            96-99: "Data Offset"
-            100-105: "Reserved"
-            106: "URG"
-            107: "ACK"
-            108: "PSH"
-            109: "RST"
-            110: "SYN"
-            111: "FIN"
-            112-127: "Window"
-            128-143: "Checksum"
-            144-159: "Urgent Pointer"
-            160-191: "(Options and Padding)"
-            192-255: "Data (variable length)"
+            0-7: "Version"
+            8-15: "Type"
+            16-31: "Length"
+            32-63: "Message ID"
+            64-95: "Timestamp"
+            96-127: "Payload (variable)"
             """
         ),
         MermaidSampleDiagram(
@@ -628,18 +540,18 @@ extension MermaidSampleDiagram {
             content: """
             requirementDiagram
 
-                requirement test_req {
+                requirement offline_reading {
                     id: 1
-                    text: the test text.
-                    risk: high
+                    text: Notes opened before stay readable without a connection.
+                    risk: medium
                     verifymethod: test
                 }
 
-                element test_entity {
-                    type: simulation
+                element local_cache {
+                    type: component
                 }
 
-                test_entity - satisfies -> test_req
+                local_cache - satisfies -> offline_reading
             """
         ),
     ]

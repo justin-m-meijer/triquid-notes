@@ -1,6 +1,10 @@
 import Foundation
 
-/// Swift-side GPX stats for the geo map detail panel (mirrors Trilium `parseGpxStats`).
+/// Reads GPX 1.0/1.1 files for geo map notes: the lines to draw, the waypoints to pin, and the
+/// figures shown in the detail panel (distance, climb, duration).
+///
+/// Every `<trk>` and every `<rte>` becomes one journey. Distances are great-circle distances
+/// summed within each segment, so the gap between two track segments is never counted.
 enum GeoMapGPXParser {
 
     struct Point: Sendable {
@@ -55,69 +59,59 @@ enum GeoMapGPXParser {
         var journeys: [JourneySummary]
     }
 
-    private static let elevationNoiseM = 5.0
-    private static let journeyJumpM = 1000.0
-    private static let earthRadiusM = 6_371_000.0
+    /// Elevation changes smaller than this are treated as GPS jitter, not as climbing.
+    private static let climbThreshold = 5.0
+    private static let meanEarthRadius = 6_371_008.8
+
+    // MARK: - Public API
 
     static func parse(_ xml: String) -> Stats? {
-        let journeys = readJourneys(from: xml)
-        guard !journeys.isEmpty else { return nil }
+        guard let file = GPXFile(xml), !file.journeys.isEmpty else { return nil }
 
-        var stats = Stats(
-            name: firstTagText("name", in: xml),
-            description: firstTagText("desc", in: xml),
-            trackCount: countTags("trk", in: xml),
-            routeCount: countTags("rte", in: xml),
-            segmentCount: countTags("trkseg", in: xml),
-            pointCount: journeys.reduce(0) { $0 + $1.segments.reduce(0) { $0 + $1.count } },
-            distance: 0,
-            journeys: []
-        )
+        var summaries: [JourneySummary] = []
+        var climb = ClimbCounter(threshold: climbThreshold)
+        var lowest: Double?
+        var highest: Double?
+        var earliest: Date?
+        var latest: Date?
 
-        var gain = 0.0
-        var loss = 0.0
-        var minElev = Double.infinity
-        var maxElev = -Double.infinity
-        var startTime: Date?
-        var endTime: Date?
+        for journey in file.journeys {
+            let length = journey.segments.reduce(0) { $0 + pathLength($1) }
+            summaries.append(JourneySummary(kind: journey.kind, name: journey.name, distance: length))
 
-        for journey in journeys {
-            var journeyDistance = 0.0
             for segment in journey.segments {
-                var anchor: Double?
-                for index in segment.indices {
-                    let point = segment[index]
-                    if index > 0 {
-                        journeyDistance += haversine(segment[index - 1], point)
+                climb.startSegment()
+                for point in segment {
+                    if let elevation = point.elevation {
+                        climb.add(elevation)
+                        lowest = Swift.min(lowest ?? elevation, elevation)
+                        highest = Swift.max(highest ?? elevation, elevation)
                     }
-                    if let elev = point.elevation {
-                        minElev = min(minElev, elev)
-                        maxElev = max(maxElev, elev)
-                        if anchor == nil {
-                            anchor = elev
-                        } else if elev - anchor! >= elevationNoiseM {
-                            gain += elev - anchor!
-                            anchor = elev
-                        } else if anchor! - elev >= elevationNoiseM {
-                            loss += anchor! - elev
-                            anchor = elev
-                        }
-                    }
-                    if let t = point.time {
-                        if startTime == nil || t < startTime! { startTime = t }
-                        if endTime == nil || t > endTime! { endTime = t }
+                    if let time = point.time {
+                        earliest = Swift.min(earliest ?? time, time)
+                        latest = Swift.max(latest ?? time, time)
                     }
                 }
             }
-            stats.journeys.append(JourneySummary(kind: journey.kind, name: journey.name, distance: journeyDistance))
-            stats.distance += journeyDistance
         }
 
-        if minElev.isFinite, maxElev.isFinite {
-            stats.elevation = ElevationStats(min: minElev, max: maxElev, gain: gain, loss: loss)
+        var stats = Stats(
+            name: file.name,
+            description: file.description,
+            trackCount: file.journeys.filter { $0.kind == .track }.count,
+            routeCount: file.journeys.filter { $0.kind == .route }.count,
+            segmentCount: file.trackSegmentCount,
+            pointCount: file.journeys.reduce(0) { total, journey in
+                total + journey.segments.reduce(0) { $0 + $1.count }
+            },
+            distance: summaries.reduce(0) { $0 + $1.distance },
+            journeys: summaries
+        )
+        if let lowest, let highest {
+            stats.elevation = ElevationStats(min: lowest, max: highest, gain: climb.gain, loss: climb.loss)
         }
-        if let startTime, let endTime, startTime <= endTime {
-            stats.time = TimeStats(start: startTime, end: endTime, duration: endTime.timeIntervalSince(startTime))
+        if let earliest, let latest {
+            stats.time = TimeStats(start: earliest, end: latest, duration: latest.timeIntervalSince(earliest))
         }
         return stats
     }
@@ -129,207 +123,230 @@ enum GeoMapGPXParser {
 
     /// Track/route segment names aligned with `readTrackLines(from:)`.
     static func readLineNames(from xml: String) -> [String] {
-        readTrackSegments(from: xml).map { $0.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
+        readTrackSegments(from: xml).map { $0.name ?? "" }
     }
 
-    /// First `<trk><name>` in the file, matching Trilium's zoomed-out GPX mark label.
+    /// Name of the first track that has one.
     static func readFirstTrackName(from xml: String) -> String? {
-        for block in containerBlocks(named: "trk", in: xml) {
-            if let name = firstTagText("name", in: block)?
-                .trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty {
-                return name
-            }
-        }
-        return nil
+        GPXFile(xml)?.journeys.first { $0.kind == .track && $0.name != nil }?.name
     }
 
     /// Display label for a zoomed-out GPX mark: first track name, then file `<name>`, then note title.
     static func summaryTitle(gpxXML: String, noteTitle: String) -> String {
-        if let firstTrack = readFirstTrackName(from: gpxXML) { return firstTrack }
-        if let fileName = parse(gpxXML)?.name?
-            .trimmingCharacters(in: .whitespacesAndNewlines), !fileName.isEmpty {
-            return fileName
+        let file = GPXFile(gpxXML)
+        if let name = file?.journeys.first(where: { $0.kind == .track && $0.name != nil })?.name {
+            return name
         }
+        if let name = file?.name { return name }
         let trimmed = noteTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? noteTitle : trimmed
     }
 
+    /// One drawable line per track segment and per route, each with at least two points.
     static func readTrackSegments(from xml: String) -> [TrackSegment] {
-        var segments: [TrackSegment] = []
-        for block in containerBlocks(named: "trk", in: xml) {
-            let trackName = firstTagText("name", in: block)
-            for segment in segmentBlocks(in: block) {
-                let line = readCoordinates(tag: "trkpt", in: segment)
-                if line.count >= 2 {
-                    segments.append(TrackSegment(name: trackName, coordinates: line))
-                }
-            }
+        guard let file = GPXFile(xml) else { return [] }
+        return file.journeys.flatMap { journey in
+            journey.segments
+                .filter { $0.count >= 2 }
+                .map { TrackSegment(name: journey.name, coordinates: $0.map { [$0.lon, $0.lat] }) }
         }
-        for block in containerBlocks(named: "rte", in: xml) {
-            let routeName = firstTagText("name", in: block)
-            let line = readCoordinates(tag: "rtept", in: block)
-            if line.count >= 2 {
-                segments.append(TrackSegment(name: routeName, coordinates: line))
-            }
-        }
-        if segments.isEmpty {
-            let coords = readPoints(tag: "trkpt", in: xml, withTime: false) + readPoints(tag: "rtept", in: xml, withTime: false)
-            if !coords.isEmpty {
-                segments.append(TrackSegment(name: nil, coordinates: coords.map { [$0.lon, $0.lat] }))
-            }
-        }
-        return segments
     }
 
     /// GPX `<wpt>` elements for map marks.
     static func readWaypoints(from xml: String) -> [GeoMapWaypoint] {
-        containerBlocks(named: "wpt", in: xml).compactMap { block in
-            let points = readPoints(tag: "wpt", in: block, withTime: false)
-            guard let point = points.first else { return nil }
-            let name = firstTagText("name", in: block)
-            return GeoMapWaypoint(lng: point.lon, lat: point.lat, name: name)
+        GPXFile(xml)?.waypoints ?? []
+    }
+
+    // MARK: - Geometry
+
+    private static func pathLength(_ points: [Point]) -> Double {
+        zip(points, points.dropFirst()).reduce(0) { $0 + greatCircleDistance($1.0, $1.1) }
+    }
+
+    /// Haversine distance in metres.
+    private static func greatCircleDistance(_ from: Point, _ to: Point) -> Double {
+        let radians = Double.pi / 180
+        let phi1 = from.lat * radians
+        let phi2 = to.lat * radians
+        let halfDeltaPhi = (to.lat - from.lat) * radians / 2
+        let halfDeltaLambda = (to.lon - from.lon) * radians / 2
+        let h = sin(halfDeltaPhi) * sin(halfDeltaPhi)
+            + cos(phi1) * cos(phi2) * sin(halfDeltaLambda) * sin(halfDeltaLambda)
+        return 2 * meanEarthRadius * asin(Swift.min(1, h.squareRoot()))
+    }
+
+    /// Counts climbing and descending, ignoring wobbles below `threshold`: a change only counts
+    /// once the elevation has moved at least that far from the last counted level.
+    private struct ClimbCounter {
+        let threshold: Double
+        private(set) var gain = 0.0
+        private(set) var loss = 0.0
+        private var reference: Double?
+
+        init(threshold: Double) { self.threshold = threshold }
+
+        mutating func startSegment() { reference = nil }
+
+        mutating func add(_ elevation: Double) {
+            guard let level = reference else { reference = elevation; return }
+            let change = elevation - level
+            guard abs(change) >= threshold else { return }
+            if change > 0 { gain += change } else { loss -= change }
+            reference = elevation
         }
     }
 
-    // MARK: - XML-ish parsing
+    // MARK: - XML
 
-    private static func readJourneys(from xml: String) -> [Journey] {
+    /// The parts of a GPX document the map uses, read with `XMLParser`.
+    private struct GPXFile {
+        var name: String?
+        var description: String?
         var journeys: [Journey] = []
-        for block in containerBlocks(named: "trk", in: xml) {
-            let segments = segmentBlocks(in: block).map { readPoints(tag: "trkpt", in: $0, withTime: true) }
-                .filter { !$0.isEmpty }
-            let name = firstTagText("name", in: block)
-            for run in splitAtJumps(segments: segments) {
-                journeys.append(Journey(kind: .track, name: name, segments: run))
+        var waypoints: [GeoMapWaypoint] = []
+        var trackSegmentCount = 0
+
+        init?(_ xml: String) {
+            let reader = Reader()
+            let parser = XMLParser(data: Data(xml.utf8))
+            parser.shouldProcessNamespaces = true
+            parser.delegate = reader
+            guard parser.parse() || !reader.file.journeys.isEmpty || !reader.file.waypoints.isEmpty else {
+                return nil
+            }
+            self = reader.file
+        }
+
+        fileprivate init() {}
+    }
+
+    private final class Reader: NSObject, XMLParserDelegate {
+        var file = GPXFile()
+
+        private var path: [String] = []
+        private var text = ""
+        private var journeyKind: Journey.Kind?
+        private var journeyName: String?
+        private var segments: [[Point]] = []
+        private var segment: [Point] = []
+        private var point: Point?
+        private var waypoint: (lat: Double, lon: Double, name: String?)?
+
+        private static let isoWithFraction = Date.ISO8601FormatStyle(includingFractionalSeconds: true)
+        private static let iso = Date.ISO8601FormatStyle()
+
+        func parser(
+            _ parser: XMLParser,
+            didStartElement elementName: String,
+            namespaceURI: String?,
+            qualifiedName: String?,
+            attributes: [String: String] = [:]
+        ) {
+            path.append(elementName)
+            text = ""
+            switch elementName {
+            case "trk":
+                beginJourney(.track)
+            case "rte":
+                beginJourney(.route)
+            case "trkseg":
+                segment = []
+            case "trkpt", "rtept":
+                point = Self.coordinate(attributes).map { Point(lat: $0.lat, lon: $0.lon) }
+            case "wpt":
+                waypoint = Self.coordinate(attributes).map { ($0.lat, $0.lon, nil) }
+            default:
+                break
             }
         }
-        for block in containerBlocks(named: "rte", in: xml) {
-            let segments = [readPoints(tag: "rtept", in: block, withTime: false)].filter { !$0.isEmpty }
-            let name = firstTagText("name", in: block)
-            for run in splitAtJumps(segments: segments) {
-                journeys.append(Journey(kind: .route, name: name, segments: run))
-            }
-        }
-        if journeys.isEmpty {
-            let points = readPoints(tag: "trkpt", in: xml, withTime: true) + readPoints(tag: "rtept", in: xml, withTime: false)
-            if !points.isEmpty {
-                journeys.append(Journey(kind: .track, name: nil, segments: [points]))
-            }
-        }
-        return journeys
-    }
 
-    private static func containerBlocks(named tag: String, in xml: String) -> [String] {
-        guard let regex = try? NSRegularExpression(
-            pattern: "<\(tag)\\b[^>]*>([\\s\\S]*?)</\(tag)>",
-            options: [.caseInsensitive]
-        ) else { return [] }
-        let range = NSRange(xml.startIndex..., in: xml)
-        return regex.matches(in: xml, range: range).compactMap { match in
-            guard let r = Range(match.range, in: xml) else { return nil }
-            return String(xml[r])
+        func parser(_ parser: XMLParser, foundCharacters string: String) {
+            text += string
         }
-    }
 
-    private static func segmentBlocks(in trkXML: String) -> [String] {
-        guard let regex = try? NSRegularExpression(
-            pattern: "<trkseg\\b[^>]*>([\\s\\S]*?)</trkseg>",
-            options: [.caseInsensitive]
-        ) else { return [trkXML] }
-        let range = NSRange(trkXML.startIndex..., in: trkXML)
-        let blocks = regex.matches(in: trkXML, range: range).compactMap { match -> String? in
-            guard let r = Range(match.range, in: trkXML) else { return nil }
-            return String(trkXML[r])
+        func parser(_ parser: XMLParser, foundCDATA CDATABlock: Data) {
+            text += String(decoding: CDATABlock, as: UTF8.self)
         }
-        return blocks.isEmpty ? [trkXML] : blocks
-    }
 
-    private static func readCoordinates(tag: String, in xml: String) -> [[Double]] {
-        readPoints(tag: tag, in: xml, withTime: false).map { [$0.lon, $0.lat] }
-    }
-
-    private static func readPoints(tag: String, in xml: String, withTime: Bool) -> [Point] {
-        guard let regex = try? NSRegularExpression(
-            pattern: "<\(tag)\\b[^>]*lat=\"([^\"]+)\"[^>]*lon=\"([^\"]+)\"[^>]*>([\\s\\S]*?)</\(tag)>|<\(tag)\\b[^>]*lon=\"([^\"]+)\"[^>]*lat=\"([^\"]+)\"[^>]*>([\\s\\S]*?)</\(tag)>",
-            options: [.caseInsensitive]
-        ) else { return [] }
-        let range = NSRange(xml.startIndex..., in: xml)
-        return regex.matches(in: xml, range: range).compactMap { match in
-            let ns = xml as NSString
-            let latStr = match.range(at: 1).location != NSNotFound ? ns.substring(with: match.range(at: 1))
-                : ns.substring(with: match.range(at: 5))
-            let lonStr = match.range(at: 2).location != NSNotFound ? ns.substring(with: match.range(at: 2))
-                : ns.substring(with: match.range(at: 4))
-            let innerRange = match.range(at: 3).location != NSNotFound ? match.range(at: 3) : match.range(at: 6)
-            guard let lat = Double(latStr), let lon = Double(lonStr) else { return nil }
-            var point = Point(lat: lat, lon: lon)
-            if innerRange.location != NSNotFound {
-                let inner = ns.substring(with: innerRange)
-                if let eleStr = firstTagText("ele", in: inner), let elev = Double(eleStr) {
-                    point.elevation = elev
+        func parser(
+            _ parser: XMLParser,
+            didEndElement elementName: String,
+            namespaceURI: String?,
+            qualifiedName: String?
+        ) {
+            let value = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            let parent = path.dropLast().last
+            switch elementName {
+            case "ele":
+                point?.elevation = Double(value)
+            case "time" where point != nil:
+                point?.time = (try? Self.isoWithFraction.parse(value)) ?? (try? Self.iso.parse(value))
+            case "name" where !value.isEmpty:
+                assignName(value, parent: parent)
+            case "desc" where !value.isEmpty && (parent == "metadata" || parent == "gpx"):
+                if file.description == nil { file.description = value }
+            case "trkpt":
+                if let point { segment.append(point) }
+                point = nil
+            case "rtept":
+                if let point { segment.append(point) }
+                point = nil
+            case "trkseg":
+                file.trackSegmentCount += 1
+                if !segment.isEmpty { segments.append(segment) }
+                segment = []
+            case "wpt":
+                if let waypoint {
+                    file.waypoints.append(GeoMapWaypoint(lng: waypoint.lon, lat: waypoint.lat, name: waypoint.name))
                 }
-                if withTime, let timeStr = firstTagText("time", in: inner) {
-                    point.time = parseGPXDate(timeStr)
-                }
+                waypoint = nil
+            case "trk", "rte":
+                endJourney()
+            default:
+                break
             }
-            return point
+            path.removeLast()
+            text = ""
         }
-    }
 
-    private static func firstTagText(_ tag: String, in xml: String) -> String? {
-        guard let regex = try? NSRegularExpression(
-            pattern: "<\(tag)\\b[^>]*>([\\s\\S]*?)</\(tag)>",
-            options: [.caseInsensitive]
-        ) else { return nil }
-        let range = NSRange(xml.startIndex..., in: xml)
-        guard let match = regex.firstMatch(in: xml, range: range) else { return nil }
-        let text = (xml as NSString).substring(with: match.range(at: 1))
-            .replacingOccurrences(of: "<![CDATA[", with: "")
-            .replacingOccurrences(of: "]]>", with: "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        return text.isEmpty ? nil : text
-    }
-
-    private static func countTags(_ tag: String, in xml: String) -> Int {
-        guard let regex = try? NSRegularExpression(pattern: "<\(tag)\\b", options: [.caseInsensitive]) else { return 0 }
-        return regex.numberOfMatches(in: xml, range: NSRange(xml.startIndex..., in: xml))
-    }
-
-    private static func parseGPXDate(_ raw: String) -> Date? {
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter.date(from: trimmed) ?? ISO8601DateFormatter().date(from: trimmed)
-    }
-
-    private static func splitAtJumps(segments: [[Point]]) -> [[[Point]]] {
-        var runs: [[[Point]]] = []
-        var current: [[Point]] = []
-        for segment in segments {
-            if let lastSegment = current.last, let previous = lastSegment.last, let first = segment.first {
-                if haversine(previous, first) > journeyJumpM {
-                    if !current.isEmpty { runs.append(current) }
-                    current = []
-                }
+        private func assignName(_ name: String, parent: String?) {
+            switch parent {
+            case "trk", "rte":
+                if journeyName == nil { journeyName = name }
+            case "wpt":
+                waypoint?.name = name
+            case "metadata", "gpx":
+                if file.name == nil { file.name = name }
+            default:
+                break
             }
-            current.append(segment)
         }
-        if !current.isEmpty { runs.append(current) }
-        return runs.isEmpty ? (segments.isEmpty ? [] : [segments]) : runs
-    }
 
-    private static func haversine(_ a: Point, _ b: Point) -> Double {
-        haversineCoords([a.lon, a.lat], [b.lon, b.lat])
-    }
+        private func beginJourney(_ kind: Journey.Kind) {
+            journeyKind = kind
+            journeyName = nil
+            segments = []
+            segment = []
+        }
 
-    private static func haversineCoords(_ a: [Double], _ b: [Double]) -> Double {
-        let toRad = Double.pi / 180
-        let dLat = (b[1] - a[1]) * toRad
-        let dLon = (b[0] - a[0]) * toRad
-        let lat1 = a[1] * toRad
-        let lat2 = b[1] * toRad
-        let h = sin(dLat / 2) * sin(dLat / 2)
-            + cos(lat1) * cos(lat2) * sin(dLon / 2) * sin(dLon / 2)
-        return 2 * earthRadiusM * asin(min(1, sqrt(h)))
+        private func endJourney() {
+            guard let kind = journeyKind else { return }
+            // A route has no segments of its own, and some tracks put their points straight
+            // under <trk>; either way the loose points form one segment.
+            if !segment.isEmpty { segments.append(segment) }
+            if !segments.isEmpty {
+                file.journeys.append(Journey(kind: kind, name: journeyName, segments: segments))
+            }
+            journeyKind = nil
+            segments = []
+            segment = []
+        }
+
+        private static func coordinate(_ attributes: [String: String]) -> (lat: Double, lon: Double)? {
+            guard let lat = attributes["lat"].flatMap(Double.init),
+                  let lon = attributes["lon"].flatMap(Double.init),
+                  (-90...90).contains(lat), (-180...180).contains(lon) else { return nil }
+            return (lat, lon)
+        }
     }
 }

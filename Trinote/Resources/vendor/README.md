@@ -80,9 +80,9 @@ URL (the `#.cjs` fragment makes MapLibre start it as a classic worker). An upgra
 After an upgrade, check a geo map with both styles (OpenStreetMap raster and VersaTiles vector, whose
 style JSON still uses legacy filters), pins, GPX tracks, shapes, and the 3D view.
 
-## `geomap-core.js` / `geomap-marker-images.js` / `gpx.js`
+## `geomap-core.js` / `geomap-marker-images.js`
 
-Shared MapLibre map engine, rasterized marker pins (colour + Boxicons glyph), and GPX parsing for `geomap-editor.html` / `geomap-viewer.html`.
+Shared MapLibre map engine, and rasterized marker pins (colour + Boxicons glyph) for `geomap-editor.html` / `geomap-viewer.html`.
 
 ## `geomap-styles/`
 

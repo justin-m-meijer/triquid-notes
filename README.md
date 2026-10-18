@@ -75,9 +75,13 @@ project.yml           XcodeGen project definition
 
 ## License
 
-Licensing is mixed. Files that come from Trinote stay under the Mozilla Public License 2.0, and the
-files written for Triquid Notes are under the PolyForm Noncommercial License 1.0.0. See
-[LICENSE.md](LICENSE.md) for which is which, and
-[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for the bundled libraries.
+Triquid Notes is licensed under the [Mozilla Public License 2.0](LICENSE), the same licence as
+[Trinote](https://github.com/StephenArg/Trinote), which it is based on. Files from Trinote are
+copyright StephenArg and contributors; the changes and new files are copyright Justin Meijer.
+
+You may use, change and share the code, also commercially. If you distribute changed versions of
+these files, those files must stay under the MPL 2.0 and their source must be available.
+
+Bundled third-party libraries keep their own licences; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 Triquid Notes is not affiliated with or endorsed by the Trilium project.
