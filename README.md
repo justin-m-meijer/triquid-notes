@@ -73,6 +73,10 @@ TrinoteShared/        code used by both the app and the share extension
 project.yml           XcodeGen project definition
 ```
 
+## Support
+
+If this is useful to you, you can support my work with a [donation through PayPal](https://www.paypal.com/donate?hosted_button_id=UNBDNLN8MSC88).
+
 ## License
 
 Triquid Notes is licensed under the [Mozilla Public License 2.0](LICENSE), the same licence as
