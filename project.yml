@@ -1,0 +1,169 @@
+name: Trinote
+options:
+  bundleIdPrefix: com.justinmeijer.nl
+  developmentLanguage: en
+  knownRegions:
+    - en
+    - nl
+    - fr
+    - de
+    - bg
+    - hr
+    - cs
+    - da
+    - et
+    - fi
+    - el
+    - hu
+    - ga
+    - it
+    - lv
+    - lt
+    - mt
+    - pl
+    - pt-PT
+    - ro
+    - sk
+    - sl
+    - es
+    - sv
+    - ru
+    - ar
+    - hi
+  deploymentTarget:
+    iOS: "26.0"
+    macOS: "26.0"
+  xcodeVersion: "16.0"
+  generateEmptyDirectories: true
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    INFOPLIST_FILE: Trinote/Resources/Info.plist
+    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    DEVELOPMENT_TEAM: D943XJSFUK
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_STRICT_CONCURRENCY: complete
+    VERSIONING_SYSTEM: apple-generic
+    # Source of truth for XcodeGen. Identity Version/Build is applied on the next
+    # build (Scripts/sync_project_yml_version.sh writes the values back here).
+    MARKETING_VERSION: "1.1.1"
+    CURRENT_PROJECT_VERSION: "122"
+
+packages:
+  Highlightr:
+    url: https://github.com/raspu/Highlightr
+    from: "2.2.0"
+
+targets:
+  Trinote:
+    type: application
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: Trinote
+        excludes:
+          - "**/*.xcassets/*/Contents.json"
+          # npm deps are build-only; bundling them duplicates filenames (package.json, README.md, …) and breaks Copy Bundle Resources.
+          - "**/Resources/editor-vendor/node_modules/**"
+          # Build-time npm project only; runtime uses canvas-editor.html + canvas-editor-assets. Bundling the folder duplicates package.json (and node_modules filenames) vs editor-vendor.
+          - "**/Resources/canvas-editor-build/**"
+          # Same rationale as canvas-editor-build: the univer-editor-build/ npm project
+          # produces univer-editor-assets/, which is the runtime artifact bundled below.
+          - "**/Resources/univer-editor-build/**"
+          # Directories below are added as folder references so HTML files can use relative paths
+          # (e.g. vendor/leaflet.js, canvas-editor-assets/excalidraw-bundle.js).
+          - "**/Resources/vendor/**"
+          - "**/Resources/canvas-editor-assets/**"
+          - "**/Resources/univer-editor-assets/**"
+          # Build-time source for Boxicons catalog generator only.
+          - "**/Resources/BoxiconsVendor/**"
+          - "**/*.entitlements"
+      - path: TrinoteShared
+      # Folder references: preserve directory structure in the bundle for HTML relative paths.
+      - path: Trinote/Resources/vendor
+        type: folder
+        buildPhase: resources
+      - path: Trinote/Resources/canvas-editor-assets
+        type: folder
+        buildPhase: resources
+      - path: Trinote/Resources/univer-editor-assets
+        type: folder
+        buildPhase: resources
+    resources:
+      - path: Trinote/Resources/Localizable.xcstrings
+      - path: Trinote/Resources/Editor.xcstrings
+      - path: Trinote/Resources/InfoPlist.xcstrings
+      - path: Trinote/Resources/Assets.xcassets
+      - path: Trinote/Resources/editor-icons
+      - path: Trinote/Resources/Fonts
+      # Bundle only vendored scripts at repo root — not node_modules (duplicate filenames break the build).
+      - path: Trinote/Resources/editor-vendor
+        excludes:
+          - "node_modules"
+    dependencies:
+      - package: Highlightr
+      - target: TrinoteShare
+        embed: true
+        codeSign: true
+    preBuildScripts:
+      - name: Apply Identity Version
+        script: |
+          bash "${SRCROOT}/Scripts/sync_project_yml_version.sh"
+        basedOnDependencyAnalysis: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.justinmeijer.nl.liquid-notes
+        SUPPORTS_MACCATALYST: NO
+        # One bundle ID on iPhone, iPad and Mac: one App Store record, universal purchase.
+        DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: NO
+        # The iPad app on Apple silicon Macs (as TestFlight installs it); no separate Mac Catalyst app.
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
+        # Mac Catalyst scaled to match iPad: the same Liquid Glass controls as on iPad; "Optimized
+        # for Mac" swapped them for Mac pop-up menus and bezel buttons.
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_FILE: Trinote/Resources/Info.plist
+        GENERATE_INFOPLIST_FILE: false
+        ENABLE_USER_SCRIPT_SANDBOXING: false
+        CODE_SIGN_ENTITLEMENTS: Trinote/Trinote.entitlements
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: "Apple Development"
+
+  TrinoteShare:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: TrinoteShare
+        excludes:
+          - "**/*.entitlements"
+          - "Info.plist"
+      - path: TrinoteShared
+    preBuildScripts:
+      - name: Apply Identity Version
+        script: |
+          bash "${SRCROOT}/Scripts/sync_project_yml_version.sh"
+        basedOnDependencyAnalysis: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.justinmeijer.nl.liquid-notes.fileshare
+        SUPPORTS_MACCATALYST: NO
+        # One bundle ID on iPhone, iPad and Mac: one App Store record, universal purchase.
+        DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: NO
+        # The iPad app on Apple silicon Macs (as TestFlight installs it); no separate Mac Catalyst app.
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
+        PRODUCT_NAME: TrinoteShare
+        INFOPLIST_FILE: TrinoteShare/Info.plist
+        GENERATE_INFOPLIST_FILE: false
+        ENABLE_USER_SCRIPT_SANDBOXING: false
+        CODE_SIGN_ENTITLEMENTS: TrinoteShare/TrinoteShare.entitlements
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: "Apple Development"
+        SKIP_INSTALL: YES
+        LD_RUNPATH_SEARCH_PATHS:
+          - "$(inherited)"
+          - "@executable_path/Frameworks"
+          - "@executable_path/../../Frameworks"

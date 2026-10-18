@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="stylesheet" href="vendor/maplibre-gl.css">
+<link rel="stylesheet" href="geomap-boxicons.css">
+<style>
+.icon-glyph-probe {
+    position: absolute;
+    visibility: hidden;
+    pointer-events: none;
+}
+</style>
+<script src="vendor/maplibre-gl.js"></script>
+<script src="vendor/gpx.js"></script>
+<script src="vendor/geomap-marker-images.js"></script>
+<script src="vendor/geomap-core.js"></script>
+<style>
+@font-face {
+    font-family: "boxicons";
+    font-weight: normal;
+    font-style: normal;
+    src: url("Fonts/boxicons.ttf") format("truetype");
+}
+* { margin: 0; padding: 0; -webkit-touch-callout: none; }
+html, body { width: 100%; height: 100%; overflow: hidden; touch-action: none; position: relative; }
+#map { width: 100%; height: 100%; position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+.geomap-toolbar {
+    position: fixed;
+    right: 12px;
+    bottom: 12px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 0;
+    border-radius: 14px;
+    overflow: hidden;
+    border-right: 1px solid rgba(0, 0, 0, 0.14);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.14);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
+}
+.geomap-tool-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    min-width: 36px;
+    width: 36px;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: rgba(255, 255, 255, 0.94);
+    font: 600 13px -apple-system, system-ui, sans-serif;
+    color: #1c1c1e;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.geomap-tool-btn + .geomap-tool-btn {
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
+}
+.geomap-tool-btn:first-child {
+    border-top-left-radius: 14px;
+    border-bottom-left-radius: 14px;
+}
+.geomap-tool-btn:last-child {
+    border-top-right-radius: 14px;
+    border-bottom-right-radius: 14px;
+}
+.geomap-tool-btn.active {
+    background: #007aff;
+    color: #fff;
+}
+.geomap-tool-btn:active:not(.active) {
+    background: rgba(0, 0, 0, 0.06);
+}
+@media (prefers-color-scheme: dark) {
+    .geomap-tool-btn {
+        background: rgba(44, 44, 46, 0.94);
+        color: #fff;
+    }
+    .geomap-tool-btn + .geomap-tool-btn {
+        border-left-color: rgba(255, 255, 255, 0.14);
+    }
+    .geomap-tool-btn:active:not(.active) {
+        background: rgba(255, 255, 255, 0.1);
+    }
+}
+.geomap-tool-btn .geomap-icon-svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+}
+.geomap-tool-btn.locating .geomap-icon-svg {
+    color: #007aff;
+    animation: geomap-locating 1s ease-in-out infinite;
+}
+@keyframes geomap-locating {
+    50% { opacity: 0.3; }
+}
+#move-mode-banner {
+    display: none;
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 10001;
+    background: rgba(0,0,0,0.82);
+    color: #fff;
+    padding: 14px 16px 18px;
+    padding-bottom: max(18px, env(safe-area-inset-bottom));
+    font-size: 15px;
+    text-align: center;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.3);
+}
+#move-mode-banner.visible { display: block; }
+#move-mode-banner #move-mode-cancel {
+    margin-top: 12px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    font-size: 15px;
+    width: 100%;
+    max-width: 280px;
+}
+/* Shape drawing: tools, a hint, and Undo / Cancel / Done (built by geomap-core.js). */
+#draw-banner {
+    display: none;
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 10001;
+    background: rgba(0,0,0,0.84);
+    color: #fff;
+    padding: 10px 12px 14px;
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+    font: 14px -apple-system, system-ui, sans-serif;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.3);
+}
+#draw-banner.visible { display: block; }
+#draw-banner .draw-tools, #draw-banner .draw-actions { display: flex; gap: 6px; justify-content: center; }
+#draw-banner .draw-hint { text-align: center; margin: 8px 0; opacity: 0.85; }
+#draw-banner button {
+    flex: 1;
+    max-width: 120px;
+    padding: 8px 6px;
+    border-radius: 9px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    font: 600 13px -apple-system, system-ui, sans-serif;
+}
+#draw-banner button.selected { background: #007aff; border-color: #007aff; }
+#draw-banner button:disabled { opacity: 0.4; }
+#draw-banner button.primary { background: #fff; color: #000; }
+#geo-diag {
+    display: none;
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    background: rgba(200,0,0,0.85);
+    color: #fff;
+    font: 13px/1.4 -apple-system, system-ui;
+    padding: 8px 12px;
+    z-index: 99999;
+    word-break: break-all;
+}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="move-mode-banner">
+    <div id="move-mode-text"></div>
+    <button type="button" id="move-mode-cancel">Cancel</button>
+</div>
+<div id="geo-diag"></div>
+<script>
+window.onerror = function(msg, src, line) {
+    var txt = 'JS error: ' + msg + ' (' + (src||'?') + ':' + line + ')';
+    var d = document.getElementById('geo-diag');
+    if (d) { d.textContent = txt; d.style.display = 'block'; }
+    try { window.webkit.messageHandlers.geoMapJSError.postMessage(txt); } catch(e) {}
+};
+</script>
+<script>
+(function() {
+    window.geoMapEditor = TrinoteGeoMap.createEngine({ readOnly: false, apiName: 'geoMapEditor' });
+    document.getElementById('move-mode-cancel').addEventListener('click', function() {
+        if (window.geoMapEditor.clearMovePinMode) {
+            window.geoMapEditor.clearMovePinMode();
+        }
+    });
+})();
+
+try {
+    if (typeof maplibregl !== 'undefined' && window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.geoMapEditorReady) {
+        window.webkit.messageHandlers.geoMapEditorReady.postMessage('ready');
+    } else if (typeof maplibregl === 'undefined') {
+        var msg = 'MapLibre not loaded — vendor/maplibre-gl.js may be missing from bundle';
+        var d = document.getElementById('geo-diag');
+        if (d) { d.textContent = msg; d.style.display = 'block'; }
+        try { window.webkit.messageHandlers.geoMapJSError.postMessage(msg); } catch(x) {}
+    }
+} catch (e) {}
+</script>
+</body>
+</html>

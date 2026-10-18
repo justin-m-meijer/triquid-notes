@@ -1,0 +1,2512 @@
+import Foundation
+import UIKit
+
+// MARK: - Protocol
+
+protocol TriliumClientProtocol: Actor, Sendable {
+    var baseURL: URL { get }
+    /// Whether the client has established a Trilium session (validated or just logged in).
+    var isSessionValid: Bool { get }
+
+    func login(password: String, rememberMe: Bool, totpToken: String?) async throws
+    /// Validates cookies against `/api/app-info` and acquires CSRF token.
+    func restoreSession() async throws
+    func logout() async throws
+
+    /// Unlocks protected-note content for this HTTP session (Trilium document password).
+    func enterProtectedSession(password: String) async throws
+    /// Extends the protected session timeout (call before sensitive writes if needed).
+    func touchProtectedSession() async throws
+    /// Ends the protected session on the server (optional; main `logout` clears cookies too).
+    func exitProtectedSession() async throws
+
+    /// Serialized cookie archive for Keychain persistence.
+    func exportSessionCookieData() -> Data?
+
+    func getAppInfo() async throws -> AppInfoResponse
+    func getNote(_ noteId: String) async throws -> NoteResponse
+    func getInboxNote(onISODay day: String) async throws -> NoteIdTitle
+    func getDayNote(onISODay day: String) async throws -> NoteIdTitle
+    /// Same HTTP as `getNote`, but also returns child `BranchResponse`s from the shared `tree/load` payload (avoids N extra `tree/load` calls per parent).
+    func getNoteWithBranches(_ noteId: String) async throws -> (NoteResponse, [BranchResponse])
+    /// Batched `POST /api/tree/load` for full-sync BFS (multiple note IDs per request).
+    func batchTreeLoad(noteIds: [String]) async throws -> TreeLoadResponse
+    /// One batched `tree/load` plus the notes' dates (one `POST /api/notes/metadata` on Trilium 0.106+, otherwise a
+    /// parallel `GET /api/notes/:id` per id), merged in request order.
+    /// - Parameter cached: What the cache holds for these notes. Without `notes/metadata`, a note whose `tree/load`
+    ///   row still matches it keeps its cached date instead of costing a `GET`.
+    func fullSyncFetchTreeBatch(noteIds: [String], cached: [String: FullSyncCachedNoteState]) async throws -> [FullSyncTreeBatchEntry]
+    func getNoteContent(_ noteId: String) async throws -> Data
+    /// A note's body, or `nil` when it's larger than `maxBytes`: the download stops as soon as that shows.
+    func getNoteContent(_ noteId: String, maxBytes: Int) async throws -> Data?
+    /// `GET /api/stats/subtree-size/:noteId`: how many notes are under the note and how much their content weighs.
+    func getSubtreeSize(_ noteId: String) async throws -> SubtreeSizeResponse
+    func updateNote(_ noteId: String, request: UpdateNoteRequest) async throws -> NoteResponse
+    func updateNoteContent(_ noteId: String, content: Data, contentType: String) async throws
+    /// Soft-deletes by default (`eraseNotes: false`). When `eraseNotes` is true, Trilium erases the note and its subtree instead of sending them to Trash.
+    func deleteNote(_ noteId: String, eraseNotes: Bool) async throws
+    /// `POST /api/delete-notes-preview`: the ids of every note deleting `branchIds` would delete, subtrees included.
+    /// Branches Trilium can't find (stale, or under `_share` / `_lbBookmarks`) add nothing.
+    func previewNoteDeletion(branchIds: [String], deleteAllClones: Bool) async throws -> [String]
+    /// `POST /api/delete-notes` (Trilium 0.106+): deletes the branches in one transaction, so either all go or none.
+    /// `deleteAllClones` deletes each note everywhere, like `deleteNote`. Progress arrives over the WebSocket as
+    /// `taskProgressCount` messages for `taskId`, out of `totalCount` when given.
+    func deleteNotes(branchIds: [String], deleteAllClones: Bool, eraseNotes: Bool, totalCount: Int?, taskId: String) async throws
+    func createNote(_ request: CreateNoteRequest) async throws -> CreateNoteResponse
+    /// New note under `parentNoteId` with copied title, type, mime, and body (child notes are not copied).
+    func duplicateNoteAsChild(sourceNoteId: String, parentNoteId: String) async throws -> CreateNoteResponse
+    /// New child with arbitrary body (text in `createNote`, binary via `updateNoteContent` when needed).
+    func createChildNoteWithContent(parentNoteId: String, title: String, noteType: String, mime: String, body: Data) async throws -> CreateNoteResponse
+    func searchNotes(query: String, fastSearch: Bool, includeArchived: Bool, ancestorNoteId: String?, orderBy: String?, orderDirection: String?, limit: Int?) async throws -> SearchResponse
+    /// Search note ids, then one `tree/load` for titles (no per-note `GET /api/notes`).
+    func searchNoteIdTitles(query: String, limit: Int) async throws -> [NoteIdTitle]
+    /// `GET /api/quick-search/:query` — per-result snippets and breadcrumbs (up to 200 results, archived notes excluded).
+    func quickSearchResults(query: String) async throws -> [QuickSearchResult]
+    /// Matching note ids only. `ancestorNoteId` limits the search to that subtree on Trilium 0.106+; older servers
+    /// ignore it, so callers that need the scope intersect with the notes they hold.
+    func searchNoteIds(query: String, ancestorNoteId: String?) async throws -> [String]
+    /// `POST /api/search/lint` (Trilium 0.106+): reads a query without running it. The first fault's message, or nil
+    /// when there is none; Trilium doesn't say where in the query it is.
+    func lintSearchQuery(_ query: String) async throws -> String?
+    /// Existing journal day notes for `yyyy-MM` under `calendarRootId`. Does not create notes.
+    /// `GET /api/special-notes/notes-for-month/{month}?calendarRoot=`
+    func getDayNotesForMonth(month: String, calendarRootId: String) async throws -> [String: String]
+    /// Notes created or modified on this local calendar day. Same as desktop Edited Notes: `GET /api/edited-notes/{yyyy-MM-dd}`.
+    func getEditedNotes(onISODay day: String) async throws -> [NoteIdTitle]
+    /// `GET /api/special-notes/days/{yyyy-MM-dd}`, behind Trilium's "Open Today's Journal Note": the journal's day
+    /// note, which the server makes first when missing, with its month (or week) and year notes, the journal's title
+    /// patterns and templates, and a "Calendar" journal when there is none.
+    func getOrCreateDayNote(onISODay day: String) async throws -> NoteIdTitle
+    /// `GET /api/special-notes/inbox-target` (Trilium 0.106+): where Trilium would put a captured note, without making
+    /// anything (no day note, no journal).
+    func getInboxTarget() async throws -> InboxTargetResponse
+
+    func getBranch(_ branchId: String, parentNoteId: String) async throws -> BranchResponse
+    func placeBranchInSiblingOrder(_ branchId: String, orderedSiblingBranchIds: [String]) async throws
+    /// `PUT /api/notes/:id/board/rename-column` — Trilium 0.106+. Renames the cards' values, the column
+    /// definition and `board.json` in one transaction.
+    func renameBoardColumn(boardNoteId: String, request: RenameBoardColumnRequest) async throws
+
+    func createBranch(_ request: CreateBranchRequest) async throws -> BranchResponse
+    func updateBranch(_ branchId: String, request: UpdateBranchRequest) async throws -> BranchResponse
+    func deleteBranch(_ branchId: String) async throws
+    /// Matches the web client: `taskId=no-progress-reporting` and `last=true` so the delete task completes without WS progress.
+    func deleteBranchWithNoProgressTask(_ branchId: String) async throws
+    /// `PUT /api/notes/:noteId/clone-to-note/:parentNoteId` — same as Trilium’s “share” (clone under `_share`).
+    func cloneNoteToParentNote(_ noteId: String, parentNoteId: String) async throws
+    /// The same clone, returning whether Trilium made it (and why not) instead of ignoring the answer.
+    func cloneNote(_ noteId: String, toParentNoteId parentNoteId: String) async throws -> CloneNoteResult
+    /// Resolves the branch linking `childNoteId` as a child of `parentNoteId` (from `POST /api/tree/load`).
+    func branchId(fromParentNoteId parentNoteId: String, toChildNoteId childNoteId: String) async throws -> String?
+    /// `PUT /api/branches/:branchId/move-to/:parentBranchId` — moves the branch (tree placement) under the target parent’s branch.
+    func moveBranchToParent(branchId: String, parentBranchId: String) async throws
+
+    func getAttribute(_ attributeId: String) async throws -> AttributeResponse
+    func createAttribute(_ request: CreateAttributeRequest) async throws
+    func deleteAttribute(noteId: String, attributeId: String) async throws
+
+    func getNoteAttachments(_ noteId: String) async throws -> [AttachmentResponse]
+    func getAttachment(_ attachmentId: String) async throws -> AttachmentResponse
+    func getAttachmentContent(_ attachmentId: String) async throws -> Data
+    func uploadAttachmentContent(_ attachmentId: String, data: Data, contentType: String) async throws
+    func uploadNoteAttachment(noteId: String, data: Data, filename: String, contentType: String) async throws -> String
+    func createAttachment(_ request: CreateAttachmentRequest) async throws -> AttachmentResponse
+    func renameAttachment(attachmentId: String, title: String) async throws
+    func deleteAttachment(_ attachmentId: String) async throws
+    /// `POST /api/attachments/{id}/convert-to-note` — attachment becomes a child note of its owner.
+    func convertAttachmentToNote(attachmentId: String) async throws -> ConvertAttachmentToNoteResponse
+    /// `GET /api/ocr/attachments/{id}/text` — Trilium 0.103+. 404 means OCR is unavailable.
+    func getAttachmentOCRText(attachmentId: String) async throws -> AttachmentOCRTextResponse
+    /// `POST /api/ocr/process-attachment/{id}` — Trilium 0.103+. 404 means OCR is unavailable.
+    func processAttachmentOCR(attachmentId: String, forceReprocess: Bool) async throws -> ProcessAttachmentOCRResponse
+    /// `GET /api/notes/:id/office-preview` — Trilium 0.105+. Server-rendered HTML for Office / EPUB.
+    func getNoteOfficePreview(_ noteId: String) async throws -> OfficePreviewResponse
+    /// `GET /api/spreadsheet/:noteId/xlsx` (Trilium 0.106+): the spreadsheet as an Excel workbook, which the server
+    /// renders from the note's stored content (not from edits still queued on the phone).
+    func exportSpreadsheetXlsx(noteId: String) async throws -> Data
+    /// `GET /api/attachments/:id/office-preview` — Trilium 0.105+. Server-rendered HTML for Office / EPUB.
+    func getAttachmentOfficePreview(_ attachmentId: String) async throws -> OfficePreviewResponse
+
+    // MARK: Sync — documented protocol (POST /api/sync/*)
+
+    func syncCheck() async throws -> SyncCheckResponse
+    func syncPull(instanceId: String, lastEntityChangeId: Int64) async throws -> SyncPullResponse
+}
+
+extension TriliumClientProtocol {
+    func fullSyncFetchTreeBatch(noteIds: [String]) async throws -> [FullSyncTreeBatchEntry] {
+        try await fullSyncFetchTreeBatch(noteIds: noteIds, cached: [:])
+    }
+}
+
+// MARK: - Cookie archive (Keychain)
+
+enum TriliumCookieArchive {
+    static func load(into storage: HTTPCookieStorage, data: Data, defaultURL: URL) {
+        guard let raw = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { return }
+        for dict in raw {
+            var props: [HTTPCookiePropertyKey: Any] = [:]
+            for (k, v) in dict {
+                let key = HTTPCookiePropertyKey(k)
+                props[key] = v
+            }
+            guard let cookie = HTTPCookie(properties: props) else { continue }
+            storage.setCookie(cookie)
+        }
+    }
+
+    static func export(from storage: HTTPCookieStorage, for url: URL) -> Data? {
+        export(cookies: storage.cookies(for: url) ?? [], for: url)
+    }
+
+    static func export(cookies: [HTTPCookie], for url: URL) -> Data? {
+        guard !cookies.isEmpty else { return nil }
+        var out: [[String: Any]] = []
+        out.reserveCapacity(cookies.count)
+        for c in cookies {
+            guard let p = c.properties else { continue }
+            var dict: [String: Any] = [:]
+            for (k, v) in p {
+                if let s = v as? String { dict[k.rawValue] = s }
+                else if let d = v as? Date { dict[k.rawValue] = d.timeIntervalSinceReferenceDate }
+                else if let n = v as? NSNumber { dict[k.rawValue] = n }
+                else if let b = v as? Bool { dict[k.rawValue] = b }
+            }
+            out.append(dict)
+        }
+        return try? JSONSerialization.data(withJSONObject: out, options: [])
+    }
+}
+
+// MARK: - Native note row (`GET /api/notes/:id`)
+
+private struct NativeNoteDetailRow: Decodable {
+    let noteId: String
+    let title: String?
+    let isProtected: Bool
+    let type: String
+    let mime: String
+    let blobId: String?
+    let isDeleted: Bool?
+    let dateCreated: String?
+    let dateModified: String?
+    let utcDateCreated: String?
+    let utcDateModified: String?
+
+    /// Used when `GET /api/notes/:id` fails but `tree/load` still returned a note row.
+    init(
+        noteId: String,
+        title: String?,
+        isProtected: Bool,
+        type: String,
+        mime: String,
+        blobId: String?,
+        isDeleted: Bool?,
+        dateCreated: String?,
+        dateModified: String?,
+        utcDateCreated: String?,
+        utcDateModified: String?
+    ) {
+        self.noteId = noteId
+        self.title = title
+        self.isProtected = isProtected
+        self.type = type
+        self.mime = mime
+        self.blobId = blobId
+        self.isDeleted = isDeleted
+        self.dateCreated = dateCreated
+        self.dateModified = dateModified
+        self.utcDateCreated = utcDateCreated
+        self.utcDateModified = utcDateModified
+    }
+}
+
+private enum TriliumHTTP {
+    static let csrfHeader = "x-csrf-token"
+}
+
+private struct ProtectedSessionLoginResponse: Decodable {
+    let success: Bool
+    let message: String?
+}
+
+// MARK: - Implementation
+
+actor TriliumClient: TriliumClientProtocol {
+    let baseURL: URL
+    nonisolated let httpCookieStorage: HTTPCookieStorage
+
+    private(set) var isSessionValid = false
+    private var csrfToken: String?
+
+    private let session: URLSession
+    private let decoder: JSONDecoder
+    private let encoder: JSONEncoder
+    private let accessHeaders: [String: String]?
+    nonisolated let cloudflareAccessCredentials: CloudflareAccessCredentials?
+    private let injectedProtocolClasses: [AnyClass]?
+    private let urlSessionDelegate: SameHostRedirectDelegate
+    /// SSO Safari handoff imports `trilium.sid` without OIDC `appSession`; v0.105+ `/bootstrap` clears `loggedIn` in that case.
+    private let skipBootstrapWithoutOIDCSession: Bool
+
+    /// - Parameter skipBootstrapWithoutOIDCSession: When true, `restoreSession()` avoids `GET /bootstrap` without an OIDC `appSession` cookie (Trilium v0.105+ SSO handoff). Password login always uses `/bootstrap` when needed.
+    init(
+        baseURL: URL,
+        persistedCookieData: Data? = nil,
+        cloudflareAccessCredentials: CloudflareAccessCredentials? = nil,
+        urlSessionConfiguration: URLSessionConfiguration? = nil,
+        skipBootstrapWithoutOIDCSession: Bool = false
+    ) {
+        self.skipBootstrapWithoutOIDCSession = skipBootstrapWithoutOIDCSession
+        self.baseURL = baseURL
+        if let cloudflareAccessCredentials, cloudflareAccessCredentials.isComplete {
+            self.cloudflareAccessCredentials = cloudflareAccessCredentials
+            self.accessHeaders = cloudflareAccessCredentials.httpHeaders
+        } else {
+            self.cloudflareAccessCredentials = nil
+            self.accessHeaders = nil
+        }
+
+        // `HTTPCookieStorage()` creates a non-functional standalone instance on iOS — `setCookie` silently discards.
+        // `.shared` is the only storage where `cookies(for:)` reliably returns what was set.
+        // We clear stale cookies for this host on every new client to keep profiles isolated.
+        let jar = HTTPCookieStorage.shared
+        Self.clearCookies(in: jar, for: baseURL)
+        self.httpCookieStorage = jar
+
+        if let persistedCookieData {
+            TriliumCookieArchive.load(into: jar, data: persistedCookieData, defaultURL: baseURL)
+        }
+
+        self.decoder = JSONDecoder()
+        self.encoder = JSONEncoder()
+
+        let config = urlSessionConfiguration ?? URLSessionConfiguration.default
+        if urlSessionConfiguration == nil {
+            config.timeoutIntervalForRequest = 30
+            config.timeoutIntervalForResource = 120
+            config.waitsForConnectivity = true
+        }
+        config.httpCookieStorage = jar
+        config.httpShouldSetCookies = true
+        config.httpCookieAcceptPolicy = .always
+
+        self.injectedProtocolClasses = urlSessionConfiguration?.protocolClasses
+        let delegate = SameHostRedirectDelegate(allowedHost: baseURL.host?.lowercased() ?? "")
+        self.urlSessionDelegate = delegate
+        self.session = URLSession(configuration: config, delegate: delegate, delegateQueue: nil)
+    }
+
+    private nonisolated static func clearCookies(in jar: HTTPCookieStorage, for baseURL: URL) {
+        guard let host = baseURL.host?.lowercased() else { return }
+        for c in jar.cookies ?? [] {
+            if c.domain.lowercased() == host || c.domain.lowercased() == ".\(host)" {
+                jar.deleteCookie(c)
+            }
+        }
+    }
+
+    func exportSessionCookieData() -> Data? {
+        TriliumCookieArchive.export(from: httpCookieStorage, for: baseURL)
+    }
+
+    // MARK: - Auth
+
+    func login(password: String, rememberMe: Bool, totpToken: String? = nil) async throws {
+        csrfToken = nil
+        isSessionValid = false
+
+        var body = "password=\(Self.applicationFormEncode(password))"
+        if rememberMe {
+            body += "&rememberMe=1"
+        }
+        if let totpToken, !totpToken.isEmpty {
+            body += "&totpToken=\(Self.applicationFormEncode(totpToken))"
+        }
+
+        let loginURL = baseURL.appendingPathComponent("login")
+        var req = URLRequest(url: loginURL)
+        req.httpMethod = "POST"
+        req.setValue("application/x-www-form-urlencoded; charset=utf-8", forHTTPHeaderField: "Content-Type")
+        req.setValue("application/json", forHTTPHeaderField: "Accept")
+        applyAccessHeaders(to: &req)
+        req.httpBody = Data(body.utf8)
+
+        let submittedTotp = Self.hasSubmittedTotpToken(totpToken)
+
+        let (redirectStopData, redirectStopHTTP, loginSession) = try await postLoginStoppingAtRedirect(request: req)
+        defer { loginSession.finishTasksAndInvalidate() }
+
+        TriliumCookieResponseParser.storeCookies(from: redirectStopHTTP, in: httpCookieStorage)
+        manuallyStoreCsrfCookie(from: redirectStopHTTP)
+        stripSameSiteFromCookies()
+
+        if redirectStopHTTP.statusCode == 401 {
+            try Self.throwMappedLoginFailure(from: redirectStopData, submittedTotpToken: submittedTotp)
+        }
+
+        var shellData = redirectStopData
+        var shellHTTP = redirectStopHTTP
+        if [301, 302, 303, 307, 308].contains(redirectStopHTTP.statusCode) {
+            let rawLoc = redirectStopHTTP.value(forHTTPHeaderField: "Location")?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "/"
+            guard let target = Self.resolveRedirectURL(rawLoc, loginURL: loginURL, baseURL: baseURL) else {
+                throw APIError.invalidURL
+            }
+            if target.host?.lowercased() != baseURL.host?.lowercased() {
+                throw APIError.decodingFailed(
+                    "Login redirected to another host (\(target.host ?? "unknown")) — this server likely uses SSO. Sign in with Safari first, or use a direct Trilium URL."
+                )
+            }
+            var getReq = URLRequest(url: target)
+            getReq.httpMethod = "GET"
+            getReq.setValue("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", forHTTPHeaderField: "Accept")
+            getReq.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+            getReq.setValue(
+                "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+                forHTTPHeaderField: "User-Agent"
+            )
+            getReq.cachePolicy = .reloadIgnoringLocalCacheData
+            applyAccessHeaders(to: &getReq)
+            let (d, r) = try await session.data(for: getReq)
+            guard let h = r as? HTTPURLResponse else { throw APIError.invalidResponse }
+            TriliumCookieResponseParser.storeCookies(from: h, in: httpCookieStorage)
+            manuallyStoreCsrfCookie(from: h)
+            stripSameSiteFromCookies()
+            if h.statusCode == 401 {
+                try Self.throwMappedLoginFailure(from: d, submittedTotpToken: submittedTotp)
+            }
+            guard (200...399).contains(h.statusCode) else {
+                throw APIError.serverError(statusCode: h.statusCode, message: String(data: d, encoding: .utf8))
+            }
+            shellData = d
+            shellHTTP = h
+        } else if !(200...399).contains(redirectStopHTTP.statusCode) {
+            throw APIError.serverError(statusCode: redirectStopHTTP.statusCode, message: String(data: redirectStopData, encoding: .utf8))
+        }
+
+        // v0.102+: the redirect target is a Vite SPA with no embedded CSRF.
+        // Try /bootstrap first (JSON with csrfToken), then fall back to HTML parsing.
+        if await fetchCsrfFromBootstrap() {
+            Log.auth.info("login: acquired CSRF from /bootstrap")
+        } else {
+            // v0.101 and earlier: CSRF is in the redirect HTML (window.glob)
+            let shellHTML = String(data: shellData, encoding: .utf8)
+            if let token = shellHTML.flatMap({ Self.extractCsrfToken(from: $0) }), !token.isEmpty {
+                csrfToken = token
+                Log.auth.info("login: extracted CSRF from redirect HTML")
+            } else if let token = Self.extractCsrfFromSetCookieHeader(shellHTTP), !token.isEmpty {
+                csrfToken = token
+                Log.auth.info("login: extracted CSRF from Set-Cookie header")
+            } else if let token = extractCsrfTokenFromCookie(), !token.isEmpty {
+                csrfToken = token
+                Log.auth.info("login: extracted CSRF from _csrf cookie jar")
+            } else {
+                Log.auth.warning("login: no CSRF token found after all attempts")
+            }
+        }
+
+        if !submittedTotp, await bootstrapIndicatesTotpRequired() {
+            throw APIError.totpRequired
+        }
+
+        do {
+            lastFetchedAppInfo = try await getAppInfo()
+        } catch APIError.unauthorized {
+            if !submittedTotp, await bootstrapIndicatesTotpRequired() {
+                throw APIError.totpRequired
+            }
+            throw APIError.unauthorized
+        }
+
+        isSessionValid = true
+    }
+
+    /// `POST /login` only (see `routes.ts` — no CSRF on this route). Stops at the first HTTP redirect so `Set-Cookie` is applied before we open the app shell.
+    private func postLoginStoppingAtRedirect(request: URLRequest) async throws -> (Data, HTTPURLResponse, URLSession) {
+        let cfg = URLSessionConfiguration.default
+        cfg.httpCookieStorage = httpCookieStorage
+        cfg.httpShouldSetCookies = true
+        cfg.httpCookieAcceptPolicy = .always
+        cfg.timeoutIntervalForRequest = 30
+        cfg.timeoutIntervalForResource = 120
+        cfg.waitsForConnectivity = injectedProtocolClasses == nil
+        if let injectedProtocolClasses {
+            cfg.protocolClasses = injectedProtocolClasses
+        }
+
+        let delegate = TriliumStopRedirectDelegate(cookieStorage: httpCookieStorage)
+        let loginSession = URLSession(configuration: cfg, delegate: delegate, delegateQueue: nil)
+
+        let (data, response) = try await loginSession.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw APIError.invalidResponse }
+        return (data, http, loginSession)
+    }
+
+    // MARK: - TOTP detection from login 401 response
+
+    enum TotpDetectionResult { case required, invalid, none }
+
+    private nonisolated static func hasSubmittedTotpToken(_ totpToken: String?) -> Bool {
+        guard let totpToken else { return false }
+        return !totpToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private nonisolated static func throwMappedLoginFailure(from data: Data, submittedTotpToken: Bool) throws {
+        switch detectLoginFailure(from: data, submittedTotpToken: submittedTotpToken) {
+        case .required: throw APIError.totpRequired
+        case .invalid:  throw APIError.totpInvalid
+        case .none:     throw APIError.unauthorized
+        }
+    }
+
+    /// Classifies a failed `POST /login` 401 body.
+    ///
+    /// - Trilium **v0.104+** returns JSON `{ "success": false, "factor": "password"|"totp" }`.
+    /// - Trilium **v0.105+** pre-auth `/bootstrap` JSON may surface `login.totpEnabled` instead.
+    /// - Older servers (≤ v0.103) return the rendered login HTML with `wrongTotp` / `totpEnabled`.
+    private nonisolated static func detectLoginFailure(from data: Data, submittedTotpToken: Bool) -> TotpDetectionResult {
+        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            if let factor = json["factor"] as? String {
+                switch factor.lowercased() {
+                case "totp":
+                    return submittedTotpToken ? .invalid : .required
+                case "password":
+                    return .none
+                default:
+                    break
+                }
+            }
+            if bootstrapJSONIndicatesTotpRequired(json) {
+                return submittedTotpToken ? .invalid : .required
+            }
+        }
+
+        let html = String(data: data, encoding: .utf8) ?? ""
+        return detectTotpFromLoginResponse(html: html)
+    }
+
+    /// v0.105+ pre-auth bootstrap payload: `{ loggedIn: false, login: { totpEnabled: true } }`.
+    private nonisolated static func bootstrapJSONIndicatesTotpRequired(_ json: [String: Any]) -> Bool {
+        guard json["loggedIn"] as? Bool == false else { return false }
+        guard let login = json["login"] as? [String: Any] else { return false }
+        return login["totpEnabled"] as? Bool == true
+    }
+
+    /// Whether `/bootstrap` reports an unauthenticated session on a TOTP-enabled server.
+    private func bootstrapIndicatesTotpRequired() async -> Bool {
+        do {
+            let url = try Self.makeURL(baseURL: baseURL, path: "/bootstrap", queryParams: nil)
+            var req = URLRequest(url: url)
+            req.httpMethod = "GET"
+            req.setValue("application/json", forHTTPHeaderField: "Accept")
+            req.cachePolicy = .reloadIgnoringLocalCacheData
+            applyAccessHeaders(to: &req)
+            let (data, response) = try await session.data(for: req)
+            guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+                return false
+            }
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                return false
+            }
+            return Self.bootstrapJSONIndicatesTotpRequired(json)
+        } catch {
+            return false
+        }
+    }
+
+    /// Inspects the 401 HTML returned by POST /login for TOTP indicators (≤ v0.103).
+    /// Trilium renders wrongTotp and totpEnabled variables into the login template.
+    private nonisolated static func detectTotpFromLoginResponse(html: String) -> TotpDetectionResult {
+        let lower = html.lowercased()
+        let totpEnabled = lower.contains("totpenabled")
+            || lower.contains("totp-enabled")
+            || lower.contains("name=\"totptoken\"")
+            || lower.contains("name='totptoken'")
+            || lower.contains("totptoken")
+
+        guard totpEnabled else { return .none }
+
+        let wrongTotp = lower.contains("wrongtotp")
+            || lower.contains("wrong-totp")
+            || lower.contains("totp verification failed")
+            || lower.contains("wrong totp")
+
+        return wrongTotp ? .invalid : .required
+    }
+
+    private nonisolated static func applicationFormEncode(_ s: String) -> String {
+        var allowed = CharacterSet.alphanumerics
+        allowed.insert(charactersIn: "-._~")
+        return s.addingPercentEncoding(withAllowedCharacters: allowed) ?? ""
+    }
+
+    private nonisolated static func resolveRedirectURL(_ location: String, loginURL: URL, baseURL: URL) -> URL? {
+        let loc = location.trimmingCharacters(in: .whitespacesAndNewlines)
+        if loc.lowercased().hasPrefix("http://") || loc.lowercased().hasPrefix("https://") {
+            return URL(string: loc)
+        }
+        if loc.hasPrefix("//"), let scheme = baseURL.scheme {
+            return URL(string: "\(scheme):\(loc)")
+        }
+        return URL(string: loc, relativeTo: loginURL)?.absoluteURL
+    }
+
+
+    /// Last `/api/app-info` payload from the most recent successful `restoreSession()`.
+    private(set) var lastFetchedAppInfo: AppInfoResponse?
+
+    func restoreSession() async throws {
+        // Handoff imports trilium.sid + trilium-csrf but not the OIDC appSession cookie.
+        // On SSO-enabled Trilium v0.105+, GET /bootstrap runs checkAuth and clears
+        // session.loggedIn when appSession is absent — validate via /api/app-info first.
+        if csrfToken == nil {
+            csrfToken = extractCsrfTokenFromCookie()
+        }
+        lastFetchedAppInfo = try await getAppInfo()
+        if csrfToken == nil {
+            if skipBootstrapWithoutOIDCSession {
+                try await refreshCsrfSkippingSSOBootstrapIfNeeded()
+            } else {
+                try await refreshCsrf()
+            }
+        }
+        isSessionValid = true
+    }
+
+    func logout() async throws {
+        defer {
+            isSessionValid = false
+            csrfToken = nil
+            lastFetchedAppInfo = nil
+            Self.clearCookies(in: httpCookieStorage, for: baseURL)
+        }
+
+        guard csrfToken != nil else { return }
+        try await refreshCsrf()
+        guard let csrfToken else { return }
+
+        var req = URLRequest(url: baseURL.appendingPathComponent("logout"))
+        req.httpMethod = "POST"
+        req.setValue(csrfToken, forHTTPHeaderField: TriliumHTTP.csrfHeader)
+        applyAccessHeaders(to: &req)
+        let (data, response) = try await session.data(for: req)
+        guard let http = response as? HTTPURLResponse else { throw APIError.invalidResponse }
+        if http.statusCode == 401 { return }
+        guard (200...399).contains(http.statusCode) else {
+            throw APIError.serverError(statusCode: http.statusCode, message: String(data: data, encoding: .utf8))
+        }
+    }
+
+    // MARK: - Protected notes (document password)
+
+    func enterProtectedSession(password: String) async throws {
+        if csrfToken == nil {
+            try await refreshCsrf()
+        }
+        struct Body: Encodable { let password: String }
+        let body = Body(password: password)
+        let resp: ProtectedSessionLoginResponse = try await postJSON("/api/login/protected", body: body, csrf: true)
+        if !resp.success {
+            throw APIError.unknown(resp.message ?? "Incorrect document password.")
+        }
+    }
+
+    func touchProtectedSession() async throws {
+        if csrfToken == nil {
+            try await refreshCsrf()
+        }
+        try await postWithoutBody(path: "/api/login/protected/touch", method: "POST", csrf: true)
+    }
+
+    func exitProtectedSession() async throws {
+        if csrfToken == nil {
+            try await refreshCsrf()
+        }
+        guard csrfToken != nil else { return }
+        try await postWithoutBody(path: "/api/logout/protected", method: "POST", csrf: true)
+    }
+
+    // MARK: - CSRF token acquisition
+
+    /// v0.102+ serves CSRF via `GET /bootstrap` (JSON with `csrfToken` field).
+    /// The response also sets the `_csrf` cookie needed for double-submit.
+    private func fetchCsrfFromBootstrap() async -> Bool {
+        do {
+            let url = try Self.makeURL(baseURL: baseURL, path: "/bootstrap", queryParams: nil)
+            var req = URLRequest(url: url)
+            req.httpMethod = "GET"
+            req.setValue("application/json", forHTTPHeaderField: "Accept")
+            req.cachePolicy = .reloadIgnoringLocalCacheData
+            applyAccessHeaders(to: &req)
+            let (data, response) = try await session.data(for: req)
+            guard let http = response as? HTTPURLResponse else { return false }
+
+            TriliumCookieResponseParser.storeCookies(from: http, in: httpCookieStorage)
+            manuallyStoreCsrfCookie(from: http)
+            stripSameSiteFromCookies()
+
+            guard (200...299).contains(http.statusCode) else {
+                Log.auth.debug("fetchCsrfFromBootstrap: status \(http.statusCode), not a v0.102+ server")
+                return false
+            }
+
+            struct BootstrapResponse: Decodable { let csrfToken: String? }
+            if let bootstrap = try? JSONDecoder().decode(BootstrapResponse.self, from: data),
+               let token = bootstrap.csrfToken, !token.isEmpty {
+                csrfToken = token
+                Log.auth.info("fetchCsrfFromBootstrap: acquired CSRF token from /bootstrap JSON")
+                return true
+            }
+
+            if let fromCookie = extractCsrfTokenFromCookie(), !fromCookie.isEmpty {
+                csrfToken = fromCookie
+                Log.auth.info("fetchCsrfFromBootstrap: acquired CSRF token from _csrf cookie (set by /bootstrap)")
+                return true
+            }
+
+            Log.auth.debug("fetchCsrfFromBootstrap: /bootstrap returned 200 but no csrfToken found")
+            return false
+        } catch {
+            Log.auth.debug("fetchCsrfFromBootstrap: failed (\(error.localizedDescription))")
+            return false
+        }
+    }
+
+    /// v0.101 and earlier: `GET /` returns server-rendered HTML with `window.glob = { csrfToken: '...' }`.
+    private func fetchCsrfFromAppShellHTML() async throws {
+        let (html, httpResponse) = try await fetchAppShellHTML()
+
+        if let token = Self.extractCsrfToken(from: html), !token.isEmpty {
+            csrfToken = token
+            Log.auth.info("refreshCsrf: extracted token from HTML")
+            return
+        }
+
+        if let token = Self.extractCsrfFromSetCookieHeader(httpResponse), !token.isEmpty {
+            csrfToken = token
+            Log.auth.info("refreshCsrf: extracted token from Set-Cookie header")
+            return
+        }
+
+        if let token = extractCsrfTokenFromCookie(), !token.isEmpty {
+            csrfToken = token
+            Log.auth.info("refreshCsrf: extracted token from _csrf cookie jar")
+            return
+        }
+
+        let looksLikeLoginPage = html.localizedCaseInsensitiveContains("login-page")
+            || html.localizedCaseInsensitiveContains("Trilium Login")
+            || html.localizedCaseInsensitiveContains("login-form")
+
+        if looksLikeLoginPage {
+            throw APIError.decodingFailed(
+                "The server still shows the login page \u{2014} the session cookie may not be sticking after sign-in. Confirm the password in Safari."
+            )
+        }
+
+        Log.auth.warning("refreshCsrf: no CSRF token found in HTML or cookies")
+    }
+
+    /// Tries `/bootstrap` (v0.102+) then falls back to HTML parsing (v0.101 and earlier).
+    private func refreshCsrf() async throws {
+        if await fetchCsrfFromBootstrap() { return }
+        try await fetchCsrfFromAppShellHTML()
+    }
+
+    /// Like `refreshCsrf()` but skips `/bootstrap` when the OIDC `appSession` cookie is absent.
+    private func refreshCsrfSkippingSSOBootstrapIfNeeded() async throws {
+        if hasOIDCSessionCookie() {
+            if await fetchCsrfFromBootstrap() { return }
+        } else {
+            Log.auth.debug("restoreSession: skipping /bootstrap (no OIDC appSession cookie)")
+        }
+        try await fetchCsrfFromAppShellHTML()
+    }
+
+    /// express-openid-connect's session cookie (default name `appSession`).
+    private func hasOIDCSessionCookie() -> Bool {
+        guard let host = baseURL.host?.lowercased() else { return false }
+        return (httpCookieStorage.cookies ?? []).contains { cookie in
+            Self.cookieDomainMatchesHost(cookie.domain, host: host)
+                && cookie.name == "appSession"
+        }
+    }
+
+    /// `csrf-csrf` v3 stores the cookie as `token|hash` (delimiter `|`).
+    /// The `x-csrf-token` header must send only the `token` part (before `|`).
+    /// This works even when the HTML is a Vite SPA shell with no embedded token.
+    private func extractCsrfTokenFromCookie() -> String? {
+        guard let host = baseURL.host?.lowercased() else { return nil }
+        for c in httpCookieStorage.cookies ?? [] {
+            guard Self.cookieDomainMatchesHost(c.domain, host: host) else { continue }
+            let name = c.name.lowercased()
+            guard name == "_csrf" || name == "csrf-token" || name == "trilium-csrf" else { continue }
+            let raw = c.value.removingPercentEncoding ?? c.value
+            guard let pipeIdx = raw.firstIndex(of: "|") else {
+                let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmed.isEmpty { return trimmed }
+                continue
+            }
+            let token = String(raw[raw.startIndex..<pipeIdx]).trimmingCharacters(in: .whitespacesAndNewlines)
+            if !token.isEmpty { return token }
+        }
+        return nil
+    }
+
+    /// iOS collapses multiple `Set-Cookie` headers into one comma-separated string inside
+    /// `allHeaderFields`.  When `trilium.sid` has an `Expires` date containing commas,
+    /// `HTTPCookie.cookies(withResponseHeaderFields:for:)` misparses the combined string
+    /// and silently drops the CSRF cookie.  This method extracts the token directly.
+    private nonisolated static func extractCsrfFromSetCookieHeader(_ response: HTTPURLResponse) -> String? {
+        guard let raw = rawSetCookieHeader(from: response) else { return nil }
+        return TriliumCookieResponseParser.extractCsrfTokenValue(fromSetCookie: raw)
+    }
+
+    private nonisolated static func rawSetCookieHeader(from response: HTTPURLResponse) -> String? {
+        for (key, value) in response.allHeaderFields {
+            if let k = key as? String, k.lowercased() == "set-cookie", let v = value as? String {
+                return v
+            }
+        }
+        return nil
+    }
+
+    private func manuallyStoreCsrfCookie(from response: HTTPURLResponse) {
+        TriliumCookieResponseParser.manuallyStoreCsrfCookie(from: response, in: httpCookieStorage)
+    }
+
+    /// Strips `SameSite` from all cookies for this host.
+    /// TriliumNext sets `SameSite=Strict` on the `_csrf` cookie; iOS may refuse to send
+    /// strict-SameSite cookies on cross-origin requests from a native app, which breaks
+    /// the double-submit CSRF validation on POST/PUT/DELETE API calls.
+    private func stripSameSiteFromCookies() {
+        guard let host = baseURL.host?.lowercased() else { return }
+        for cookie in httpCookieStorage.cookies ?? [] {
+            guard Self.cookieDomainMatchesHost(cookie.domain, host: host) else { continue }
+            guard cookie.sameSitePolicy != nil, var props = cookie.properties else { continue }
+            props.removeValue(forKey: .sameSitePolicy)
+            httpCookieStorage.deleteCookie(cookie)
+            if let cleaned = HTTPCookie(properties: props) {
+                httpCookieStorage.setCookie(cleaned)
+            }
+        }
+    }
+
+    /// Whether `cookie.domain` (with optional leading `.`) matches request `host`.
+    private nonisolated static func cookieDomainMatchesHost(_ cookieDomain: String, host: String) -> Bool {
+        let d = cookieDomain.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let h = host.lowercased()
+        if d.isEmpty { return false }
+        if d.hasPrefix(".") {
+            let suffix = String(d.dropFirst())
+            return h == suffix || h.hasSuffix("." + suffix)
+        }
+        return h == d
+    }
+
+    /// Fetches `GET /` for v0.101 and earlier (server-rendered HTML with `window.glob`).
+    private func fetchAppShellHTML() async throws -> (String, HTTPURLResponse) {
+        var req = URLRequest(url: baseURL)
+        req.httpMethod = "GET"
+        req.cachePolicy = .reloadIgnoringLocalCacheData
+        req.setValue("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", forHTTPHeaderField: "Accept")
+        req.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+        req.setValue(
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+            forHTTPHeaderField: "User-Agent"
+        )
+
+        applyAccessHeaders(to: &req)
+
+        let (data, response) = try await session.data(for: req)
+        guard let http = response as? HTTPURLResponse else { throw APIError.invalidResponse }
+
+        TriliumCookieResponseParser.storeCookies(from: http, in: httpCookieStorage)
+        manuallyStoreCsrfCookie(from: http)
+        stripSameSiteFromCookies()
+
+        guard (200...399).contains(http.statusCode) else {
+            if http.statusCode == 401 { throw APIError.unauthorized }
+            throw APIError.serverError(statusCode: http.statusCode, message: nil)
+        }
+        if let html = String(data: data, encoding: .utf8) { return (html, http) }
+        if let html = String(data: data, encoding: .isoLatin1) { return (html, http) }
+        throw APIError.decodingFailed("HTML encoding")
+    }
+
+    /// v0.101 and earlier: extracts CSRF token from `window.glob = { csrfToken: '...' }` in HTML.
+    private static func extractCsrfToken(from html: String) -> String? {
+        let patterns: [String] = [
+            #"csrfToken:\s*'([^']+)'"#,
+            #"csrfToken:\s*"([^"]+)""#,
+            #"window\.glob\s*=\s*\{.{0,4000}?csrfToken\s*:\s*'([^']+)'"#,
+            #"window\.glob\s*=\s*\{.{0,4000}?csrfToken\s*:\s*"([^"]+)""#,
+            #""csrfToken"\s*:\s*"([^"]+)""#,
+            #"'csrfToken'\s*:\s*'([^']+)'"#,
+            #"<meta\s+name=["']csrf-token["']\s+content=["']([^"']+)["']"#
+        ]
+        let regexOpts: NSRegularExpression.Options = [.caseInsensitive, .dotMatchesLineSeparators]
+        for pattern in patterns {
+            guard let regex = try? NSRegularExpression(pattern: pattern, options: regexOpts) else { continue }
+            let range = NSRange(html.startIndex..., in: html)
+            guard let match = regex.firstMatch(in: html, options: [], range: range),
+                  match.numberOfRanges > 1,
+                  let tokenRange = Range(match.range(at: 1), in: html)
+            else { continue }
+            let token = String(html[tokenRange]).trimmingCharacters(in: .whitespacesAndNewlines)
+            if !token.isEmpty { return token }
+        }
+
+        // Manual string search fallback when regex fails on unusual encodings
+        if let token = manualCsrfSearch(in: html) {
+            return token
+        }
+        return nil
+    }
+
+    /// Brute-force search for `csrfToken` followed by a quoted value.
+    private static func manualCsrfSearch(in html: String) -> String? {
+        guard let keyRange = html.range(of: "csrfToken", options: .caseInsensitive) else { return nil }
+        let after = html[keyRange.upperBound...]
+        for quote: Character in ["'", "\""] {
+            guard let openIdx = after.firstIndex(of: quote) else { continue }
+            let valueStart = after.index(after: openIdx)
+            guard valueStart < after.endIndex,
+                  let closeIdx = after[valueStart...].firstIndex(of: quote)
+            else { continue }
+            let token = String(after[valueStart..<closeIdx]).trimmingCharacters(in: .whitespacesAndNewlines)
+            if !token.isEmpty && token.count < 256 { return token }
+        }
+        return nil
+    }
+
+    // MARK: - App
+
+    func getAppInfo() async throws -> AppInfoResponse {
+        try await get("/api/app-info", csrf: false)
+    }
+
+    func syncCheck() async throws -> SyncCheckResponse {
+        try await get("/api/sync/check", csrf: false)
+    }
+
+    /// Blob content larger than this is stubbed out in `/api/sync/changed` responses
+    /// (v0.104+ `maxBlobContentSize`). Trinote refreshes bodies via `/api/notes/:id/open`
+    /// when a blob change arrives, so stubbing large payloads is safe. Older servers ignore
+    /// the unknown query param.
+    private static let syncPullMaxBlobContentSize = 65_536
+
+    func syncPull(instanceId: String, lastEntityChangeId: Int64) async throws -> SyncPullResponse {
+        let params: [String: String] = [
+            "instanceId": instanceId,
+            "lastEntityChangeId": String(lastEntityChangeId),
+            "logMarkerId": String(UUID().uuidString.prefix(10)),
+            "maxBlobContentSize": String(Self.syncPullMaxBlobContentSize)
+        ]
+        let data: Data = try await getRaw("/api/sync/changed", queryParams: params, csrf: false)
+        return try SyncPullResponse.parseFromChanged(jsonData: data)
+    }
+
+    // MARK: - Notes
+
+    func getNote(_ noteId: String) async throws -> NoteResponse {
+        try await getNoteWithBranches(noteId).0
+    }
+
+    func getNoteWithBranches(_ noteId: String) async throws -> (NoteResponse, [BranchResponse]) {
+        async let detailRow: NativeNoteDetailRow = try await get("/api/notes/\(noteId)", csrf: false)
+        async let treeResponse: TreeLoadResponse = try await postJSON("/api/tree/load", body: TreeLoadRequest(noteIds: [noteId]), csrf: true)
+        let detail = try await detailRow
+        let tree = try await treeResponse
+        let index = TreeLoadIndex(tree)
+        let note = Self.buildNoteResponse(detail: detail, index: index, noteId: noteId)
+        let branches = Self.liveChildBranchResponses(index: index, parentNoteId: noteId)
+        return (note, branches)
+    }
+
+    func batchTreeLoad(noteIds: [String]) async throws -> TreeLoadResponse {
+        try await postJSON("/api/tree/load", body: TreeLoadRequest(noteIds: noteIds), csrf: true)
+    }
+
+    func fullSyncFetchTreeBatch(noteIds: [String], cached: [String: FullSyncCachedNoteState]) async throws -> [FullSyncTreeBatchEntry] {
+        guard !noteIds.isEmpty else { return [] }
+        let tree: TreeLoadResponse = try await postJSON("/api/tree/load", body: TreeLoadRequest(noteIds: noteIds), csrf: true)
+        var rowsById: [String: TreeLoadNoteRow] = [:]
+        rowsById.reserveCapacity(tree.notes.count)
+        for n in tree.notes { rowsById[n.noteId] = n }
+        let details = await fetchNoteDetails(noteIds: noteIds, treeRows: rowsById, cached: cached)
+        let index = TreeLoadIndex(tree)
+        var entries: [FullSyncTreeBatchEntry] = []
+        entries.reserveCapacity(noteIds.count)
+        for noteId in noteIds {
+            let detail: NativeNoteDetailRow
+            if let d = details[noteId] {
+                detail = d
+            } else if let row = rowsById[noteId] {
+                detail = Self.nativeDetailFallback(from: row)
+            } else {
+                continue
+            }
+            if detail.isDeleted == true { continue }
+            let note = Self.buildNoteResponse(detail: detail, index: index, noteId: noteId)
+            let childBranches = Self.liveChildBranchResponses(index: index, parentNoteId: noteId)
+            entries.append(FullSyncTreeBatchEntry(note: note, childBranches: childBranches))
+        }
+        return entries
+    }
+
+    /// Each note's row with its dates. Trilium 0.106+ gives the dates of the whole batch in one `POST /api/notes/metadata`,
+    /// merged with the batch's `tree/load` rows. Older servers, or a failed batch call, take one `GET` per note that is
+    /// new or changed since it was cached; an unchanged note keeps its cached date.
+    private func fetchNoteDetails(
+        noteIds: [String],
+        treeRows: [String: TreeLoadNoteRow],
+        cached: [String: FullSyncCachedNoteState] = [:]
+    ) async -> [String: NativeNoteDetailRow] {
+        if TriliumServerCompatibility.supportsBulkNoteMetadata(lastFetchedAppInfo) {
+            do {
+                let timestamps: [String: NoteTimestampsRow] = try await postJSON(
+                    "/api/notes/metadata",
+                    body: TreeLoadRequest(noteIds: noteIds),
+                    csrf: true
+                )
+                var details: [String: NativeNoteDetailRow] = [:]
+                details.reserveCapacity(noteIds.count)
+                // A note missing from either answer was deleted meanwhile, or tree/load left it out; callers handle both.
+                for noteId in noteIds {
+                    guard let row = treeRows[noteId], let dates = timestamps[noteId] else { continue }
+                    details[noteId] = Self.nativeDetailFallback(from: row, timestamps: dates)
+                }
+                return details
+            } catch {
+                if case .cancelled = APIError.from(error) { return [:] }
+                Log.api.warning("notes/metadata failed, loading notes one by one: \(error)")
+            }
+        }
+        var details: [String: NativeNoteDetailRow] = [:]
+        var changedIds: [String] = []
+        for noteId in noteIds {
+            if let row = treeRows[noteId], let known = cached[noteId], known.matches(row) {
+                details[noteId] = Self.nativeDetailFallback(
+                    from: row,
+                    timestamps: NoteTimestampsRow(utcDateModified: known.utcDateModified)
+                )
+            } else {
+                changedIds.append(noteId)
+            }
+        }
+        let fetched = await fetchNativeNoteDetailsParallel(noteIds: changedIds, maxConcurrency: 8)
+        details.merge(fetched) { _, fetched in fetched }
+        return details
+    }
+
+    /// Parallel `GET /api/notes/:id` for full sync; failures return no key (caller may fall back to `tree.notes`).
+    private func fetchNativeNoteDetailsParallel(noteIds: [String], maxConcurrency: Int) async -> [String: NativeNoteDetailRow] {
+        guard !noteIds.isEmpty else { return [:] }
+        return await withTaskGroup(of: (String, NativeNoteDetailRow?).self) { group in
+            var byId: [String: NativeNoteDetailRow] = [:]
+            byId.reserveCapacity(noteIds.count)
+            var index = 0
+            let ids = noteIds
+            let start = min(maxConcurrency, ids.count)
+            for _ in 0..<start {
+                let id = ids[index]
+                index += 1
+                group.addTask {
+                    do {
+                        let row: NativeNoteDetailRow = try await self.get("/api/notes/\(id)", csrf: false)
+                        return (id, row)
+                    } catch {
+                        return (id, nil)
+                    }
+                }
+            }
+            for await pair in group {
+                if let row = pair.1 { byId[pair.0] = row }
+                if index < ids.count {
+                    let id = ids[index]
+                    index += 1
+                    group.addTask {
+                        do {
+                            let row: NativeNoteDetailRow = try await self.get("/api/notes/\(id)", csrf: false)
+                            return (id, row)
+                        } catch {
+                            return (id, nil)
+                        }
+                    }
+                }
+            }
+            return byId
+        }
+    }
+
+    func getNoteContent(_ noteId: String) async throws -> Data {
+        var req = try buildRequest(path: "/api/notes/\(noteId)/open", method: "GET", queryParams: nil, csrf: false, jsonBody: false)
+        req.cachePolicy = .reloadIgnoringLocalCacheData
+        req.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+        let (data, response) = try await session.data(for: req)
+        try validateResponse(response, data: data)
+        return data
+    }
+
+    func getNoteContent(_ noteId: String, maxBytes: Int) async throws -> Data? {
+        var req = try buildRequest(path: "/api/notes/\(noteId)/open", method: "GET", queryParams: nil, csrf: false, jsonBody: false)
+        req.cachePolicy = .reloadIgnoringLocalCacheData
+        req.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+        let (bytes, response) = try await session.bytes(for: req)
+        let succeeded = ((response as? HTTPURLResponse)?.statusCode).map { (200...299).contains($0) } ?? false
+        // Stop before downloading anything when the server says up front it's too large.
+        if succeeded, response.expectedContentLength > Int64(maxBytes) {
+            bytes.task.cancel()
+            return nil
+        }
+        var data = Data()
+        if response.expectedContentLength > 0 {
+            data.reserveCapacity(Int(response.expectedContentLength))
+        }
+        for try await byte in bytes {
+            data.append(byte)
+            // No length up front (compressed or chunked): stop once it passes the limit.
+            if succeeded, data.count > maxBytes {
+                bytes.task.cancel()
+                return nil
+            }
+        }
+        try validateResponse(response, data: data)
+        return data
+    }
+
+    func getSubtreeSize(_ noteId: String) async throws -> SubtreeSizeResponse {
+        try await get("/api/stats/subtree-size/\(noteId)", csrf: false)
+    }
+
+    func updateNote(_ noteId: String, request: UpdateNoteRequest) async throws -> NoteResponse {
+        if let title = request.title {
+            struct Body: Encodable { let title: String }
+            try await putJSONVoid("/api/notes/\(noteId)/title", body: Body(title: title), csrf: true)
+        }
+        if request.type != nil || request.mime != nil {
+            struct Body: Encodable { let type: String?; let mime: String? }
+            try await putJSONVoid("/api/notes/\(noteId)/type", body: Body(type: request.type, mime: request.mime), csrf: true)
+        }
+        return try await getNote(noteId)
+    }
+
+    func updateNoteContent(_ noteId: String, content: Data, contentType: String) async throws {
+        if TriliumNoteBodyEncoding.usesUTF8JSONContent(mime: contentType, data: content) {
+            let asString = String(data: content, encoding: .utf8) ?? ""
+            struct Body: Encodable { let content: String }
+            try await putJSONVoid("/api/notes/\(noteId)/data", body: Body(content: asString), csrf: true)
+            return
+        }
+        do {
+            try await uploadNoteFile(noteId: noteId, data: content, contentType: contentType)
+        } catch {
+            let api = APIError.from(error)
+            if case .notFound = api {
+                // Older servers: carry raw bytes as ISO-8859-1 in JSON `{ content }`.
+                let latin1 = String(data: content, encoding: .isoLatin1) ?? ""
+                struct Body: Encodable { let content: String }
+                try await putJSONVoid("/api/notes/\(noteId)/data", body: Body(content: latin1), csrf: true)
+                return
+            }
+            throw error
+        }
+    }
+
+    /// Trilium native file/image body upload (`PUT /api/notes/:id/file`).
+    private func uploadNoteFile(noteId: String, data: Data, contentType: String) async throws {
+        let ext = Self.filenameExtension(forMIME: contentType)
+        _ = try await uploadMultipartAttachment(
+            path: "/api/notes/\(noteId)/file",
+            method: "PUT",
+            data: data,
+            filename: "content.\(ext)",
+            contentType: contentType
+        )
+    }
+
+    private nonisolated static func filenameExtension(forMIME mime: String) -> String {
+        switch mime.lowercased() {
+        case "image/png": return "png"
+        case "image/jpeg", "image/jpg": return "jpg"
+        case "image/gif": return "gif"
+        case "image/webp": return "webp"
+        case "image/avif": return "avif"
+        case "image/heic": return "heic"
+        case "image/heif": return "heif"
+        case "application/pdf": return "pdf"
+        default: return "bin"
+        }
+    }
+
+    func deleteNote(_ noteId: String, eraseNotes: Bool) async throws {
+        let taskId = String(UUID().uuidString.prefix(12))
+        let q: [String: String] = [
+            "taskId": taskId,
+            "last": "true",
+            "eraseNotes": eraseNotes ? "true" : "false"
+        ]
+        try await delete("/api/notes/\(noteId)", queryParams: q, csrf: true)
+    }
+
+    func previewNoteDeletion(branchIds: [String], deleteAllClones: Bool) async throws -> [String] {
+        struct Body: Encodable {
+            let branchIdsToDelete: [String]
+            let deleteAllClones: Bool
+        }
+        struct Preview: Decodable { let noteIdsToBeDeleted: [String] }
+        let preview: Preview = try await postJSON(
+            "/api/delete-notes-preview",
+            body: Body(branchIdsToDelete: branchIds, deleteAllClones: deleteAllClones),
+            csrf: true
+        )
+        return preview.noteIdsToBeDeleted
+    }
+
+    /// The whole selection deletes inside one request, which the default 30 s timeout can cut short on a large subtree.
+    private static let bulkDeleteTimeout: TimeInterval = 300
+
+    func deleteNotes(branchIds: [String], deleteAllClones: Bool, eraseNotes: Bool, totalCount: Int?, taskId: String) async throws {
+        struct Body: Encodable {
+            let branchIdsToDelete: [String]
+            let deleteAllClones: Bool
+            let eraseNotes: Bool
+            let totalCount: Int?
+            let taskId: String
+        }
+        var request = try buildRequest(path: "/api/delete-notes", method: "POST", queryParams: nil, csrf: true, jsonBody: true)
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try encoder.encode(Body(
+            branchIdsToDelete: branchIds,
+            deleteAllClones: deleteAllClones,
+            eraseNotes: eraseNotes,
+            totalCount: totalCount,
+            taskId: taskId
+        ))
+        request.timeoutInterval = Self.bulkDeleteTimeout
+        let (data, response) = try await dataForLongRunningRequest(request, timeout: Self.bulkDeleteTimeout)
+        try validateResponse(response, data: data)
+    }
+
+    func createNote(_ request: CreateNoteRequest) async throws -> CreateNoteResponse {
+        struct Body: Encodable {
+            let title: String?
+            let type: String
+            let mime: String?
+            let content: String
+            let notePosition: Int?
+            let prefix: String?
+            let isProtected: Bool?
+            let noteId: String?
+            let branchId: String?
+            let templateNoteId: String?
+        }
+        let body = Body(
+            title: request.title,
+            type: request.type,
+            mime: request.mime,
+            content: request.content,
+            notePosition: request.notePosition,
+            prefix: request.prefix,
+            isProtected: request.isProtected,
+            noteId: request.noteId,
+            branchId: request.branchId,
+            templateNoteId: request.templateNoteId
+        )
+        let path = "/api/notes/\(request.parentNoteId)/children"
+        let q = ["target": "into"]
+        let contentPreview: String
+        if request.content.count <= 800 {
+            contentPreview = request.content.replacingOccurrences(of: "\n", with: "\\n")
+        } else {
+            contentPreview = "<\(request.content.count) bytes, preview omitted>"
+        }
+        Log.noteDiag.info(
+            """
+            NoteDiag CREATE api POST /api/notes/\(request.parentNoteId)/children
+              title=\(request.title ?? "<from #titleTemplate>") type=\(request.type) mime=\(request.mime ?? "nil") templateNoteId=\(request.templateNoteId ?? "nil")
+              content.len=\(request.content.count) content.preview=\(contentPreview)
+              notePosition=\(request.notePosition.map(String.init) ?? "nil") branchId=\(request.branchId ?? "nil") clientNoteId=\(request.noteId ?? "nil") protected=\(request.isProtected.map(String.init) ?? "nil")
+            """
+        )
+        let res: CreateNoteNativeResponse = try await postJSON(path, queryParams: q, body: body, csrf: true)
+        let note = try await getNote(res.note.noteId)
+        let br = res.branch
+        let branch = BranchResponse(
+            branchId: br.branchId,
+            noteId: br.noteId,
+            parentNoteId: br.parentNoteId,
+            prefix: br.prefix,
+            notePosition: br.notePosition,
+            isExpanded: br.isExpanded ?? false,
+            utcDateModified: br.utcDateModified
+        )
+        return CreateNoteResponse(note: note, branch: branch)
+    }
+
+    func duplicateNoteAsChild(sourceNoteId: String, parentNoteId: String) async throws -> CreateNoteResponse {
+        let src = try await getNote(sourceNoteId)
+        if src.isProtected {
+            throw APIError.unknown("Protected notes can’t be duplicated in the app.")
+        }
+        let data = try await getNoteContent(sourceNoteId)
+        let dupTitle = Self.duplicateNoteTitle(from: src.title)
+        return try await createChildNoteWithContent(
+            parentNoteId: parentNoteId,
+            title: dupTitle,
+            noteType: src.type,
+            mime: src.mime,
+            body: data
+        )
+    }
+
+    func createChildNoteWithContent(parentNoteId: String, title: String, noteType: String, mime: String, body: Data) async throws -> CreateNoteResponse {
+        let (initialContent, needsBinaryUpload) = Self.initialCreateContentForDuplicate(
+            data: body,
+            type: noteType,
+            mime: mime
+        )
+        let request = CreateNoteRequest(
+            parentNoteId: parentNoteId,
+            title: title,
+            type: noteType,
+            mime: mime,
+            content: initialContent,
+            notePosition: nil,
+            prefix: nil,
+            isProtected: false,
+            noteId: nil,
+            branchId: nil,
+            templateNoteId: nil
+        )
+        var response = try await createNote(request)
+        if needsBinaryUpload {
+            try await updateNoteContent(response.note.noteId, content: body, contentType: mime)
+            let refreshed = try await getNote(response.note.noteId)
+            response = CreateNoteResponse(note: refreshed, branch: response.branch)
+        }
+        return response
+    }
+
+    private static func duplicateNoteTitle(from title: String) -> String {
+        let t = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        if t.isEmpty { return "Note (copy)" }
+        return "\(t) (copy)"
+    }
+
+    /// UTF-8 text for `createNote`, or empty with `needsBinaryUpload` when body should be sent via `updateNoteContent`.
+    private static func initialCreateContentForDuplicate(data: Data, type: String, mime: String) -> (String, Bool) {
+        if TriliumNoteBodyEncoding.usesUTF8JSONContent(type: type, mime: mime),
+           let s = String(data: data, encoding: .utf8) {
+            return (s, false)
+        }
+        if data.isEmpty {
+            return ("", false)
+        }
+        return ("", true)
+    }
+
+    func searchNotes(
+        query: String,
+        fastSearch: Bool = false,
+        includeArchived: Bool = false,
+        ancestorNoteId: String? = nil,
+        orderBy: String? = nil,
+        orderDirection: String? = nil,
+        limit: Int? = nil
+    ) async throws -> SearchResponse {
+        _ = fastSearch
+        _ = includeArchived
+        _ = ancestorNoteId
+        _ = orderBy
+        _ = orderDirection
+
+        let ids: [String] = try await get(
+            "/api/search/\(Self.percentEncodePathSegment(query))",
+            csrf: false,
+            pathIsPercentEncoded: true
+        )
+
+        let max = limit ?? 50
+        let slice = Array(ids.prefix(max))
+        let entries = try await fullSyncFetchTreeBatch(noteIds: slice)
+        return SearchResponse(results: entries.map(\.note), debugInfo: nil)
+    }
+
+    func searchNoteIds(query: String, ancestorNoteId: String?) async throws -> [String] {
+        try await get(
+            "/api/search/\(Self.percentEncodePathSegment(query))",
+            queryParams: ancestorNoteId.map { ["ancestorNoteId": $0] },
+            csrf: false,
+            pathIsPercentEncoded: true
+        )
+    }
+
+    func lintSearchQuery(_ query: String) async throws -> String? {
+        struct Body: Encodable { let searchString: String }
+        struct Lint: Decodable { let error: String? }
+        let lint: Lint = try await postJSON("/api/search/lint", body: Body(searchString: query), csrf: true)
+        let message = lint.error?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return message.isEmpty ? nil : message
+    }
+
+    func quickSearchResults(query: String) async throws -> [QuickSearchResult] {
+        let response: QuickSearchResponse = try await get(
+            "/api/quick-search/\(Self.percentEncodePathSegment(query))",
+            csrf: false,
+            pathIsPercentEncoded: true
+        )
+        return response.searchResults ?? []
+    }
+
+    func searchNoteIdTitles(query: String, limit: Int) async throws -> [NoteIdTitle] {
+        let ids: [String] = try await get(
+            "/api/search/\(Self.percentEncodePathSegment(query))",
+            csrf: false,
+            pathIsPercentEncoded: true
+        )
+        let slice = Array(ids.prefix(max(0, limit)))
+        guard !slice.isEmpty else { return [] }
+        let tree = try await batchTreeLoad(noteIds: slice)
+        var titleById: [String: (title: String, isProtected: Bool)] = [:]
+        titleById.reserveCapacity(tree.notes.count)
+        for row in tree.notes {
+            if row.isDeleted == true { continue }
+            titleById[row.noteId] = (row.title, row.isProtected)
+        }
+        return slice.compactMap { id in
+            guard let info = titleById[id], !info.title.isEmpty else { return nil }
+            return NoteIdTitle(noteId: id, title: info.title, isProtected: info.isProtected)
+        }
+    }
+
+    func getDayNotesForMonth(month: String, calendarRootId: String) async throws -> [String: String] {
+        let parts = month.split(separator: "-")
+        guard parts.count == 2,
+              parts[0].count == 4, parts[1].count == 2,
+              parts[0].allSatisfy(\.isNumber),
+              parts[1].allSatisfy(\.isNumber)
+        else {
+            throw APIError.unknown("Invalid journal month \(month)")
+        }
+        return try await get(
+            "/api/special-notes/notes-for-month/\(month)",
+            queryParams: ["calendarRoot": calendarRootId],
+            csrf: false
+        )
+    }
+
+    /// Trilium's inbox for `day` (yyyy-MM-dd): the note labeled `#inbox`, else that day's note.
+    func getInboxNote(onISODay day: String) async throws -> NoteIdTitle {
+        try await getSpecialNote("/api/special-notes/inbox/\(day)", day: day)
+    }
+
+    /// The journal note for `day` (yyyy-MM-dd); Trilium creates it when missing.
+    func getDayNote(onISODay day: String) async throws -> NoteIdTitle {
+        try await getSpecialNote("/api/special-notes/days/\(day)", day: day)
+    }
+
+    private func getSpecialNote(_ path: String, day: String) async throws -> NoteIdTitle {
+        guard JournalDayEditedNotes.isISODay(day) else {
+            throw APIError.unknown("Invalid journal day \(day)")
+        }
+        struct Hit: Decodable {
+            let noteId: String
+            let title: String?
+            let isProtected: Bool?
+        }
+        let hit: Hit = try await get(path, csrf: false)
+        return NoteIdTitle(noteId: hit.noteId, title: hit.title ?? "", isProtected: hit.isProtected ?? false)
+    }
+
+    func getEditedNotes(onISODay day: String) async throws -> [NoteIdTitle] {
+        guard JournalDayEditedNotes.isISODay(day) else {
+            throw APIError.unknown("Invalid journal day \(day)")
+        }
+        let hits: [EditedNoteHit] = try await get("/api/edited-notes/\(day)", csrf: false)
+        return hits.compactMap { hit in
+            if hit.isDeleted { return nil }
+            let title = hit.title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            guard !title.isEmpty else { return nil }
+            return NoteIdTitle(noteId: hit.noteId, title: title, isProtected: false)
+        }
+    }
+
+    func getOrCreateDayNote(onISODay day: String) async throws -> NoteIdTitle {
+        guard JournalDayEditedNotes.isISODay(day) else {
+            throw APIError.unknown("Invalid journal day \(day)")
+        }
+        struct DayNote: Decodable {
+            let noteId: String
+            let title: String?
+            let isProtected: Bool?
+        }
+        let note: DayNote = try await get("/api/special-notes/days/\(day)", csrf: true)
+        return NoteIdTitle(noteId: note.noteId, title: note.title ?? "", isProtected: note.isProtected ?? false)
+    }
+
+    func getInboxTarget() async throws -> InboxTargetResponse {
+        try await get("/api/special-notes/inbox-target", csrf: true)
+    }
+
+    /// Returns template note IDs from Trilium's built-in endpoint used by desktop/web clients.
+    /// Useful when title-based lookup is unreliable across versions/locales.
+    func searchTemplateNoteIds() async throws -> [String] {
+        try await get("/api/search-templates", csrf: true)
+    }
+
+    // MARK: - Branches
+
+    func getBranch(_ branchId: String, parentNoteId: String) async throws -> BranchResponse {
+        let tree: TreeLoadResponse = try await postJSON("/api/tree/load", body: TreeLoadRequest(noteIds: [parentNoteId]), csrf: true)
+        guard let row = tree.branches.first(where: { $0.branchId == branchId }) else {
+            throw APIError.notFound("branch \(branchId)")
+        }
+        return BranchResponse(
+            branchId: row.branchId,
+            noteId: row.noteId,
+            parentNoteId: row.parentNoteId,
+            prefix: row.prefix,
+            notePosition: row.notePosition,
+            isExpanded: row.isExpanded,
+            utcDateModified: nil
+        )
+    }
+
+    func renameBoardColumn(boardNoteId: String, request: RenameBoardColumnRequest) async throws {
+        try await putJSONVoid("/api/notes/\(boardNoteId)/board/rename-column", body: request, csrf: true)
+    }
+
+    func placeBranchInSiblingOrder(_ branchId: String, orderedSiblingBranchIds: [String]) async throws {
+        guard let idx = orderedSiblingBranchIds.firstIndex(of: branchId) else { return }
+        if orderedSiblingBranchIds.count <= 1 { return }
+
+        if idx == 0 {
+            let rest = orderedSiblingBranchIds.filter { $0 != branchId }
+            guard let before = rest.first else { return }
+            try await putExpectingSuccess("/api/branches/\(branchId)/move-before/\(before)")
+        } else {
+            let after = orderedSiblingBranchIds[idx - 1]
+            if after == branchId { return }
+            try await putExpectingSuccess("/api/branches/\(branchId)/move-after/\(after)")
+        }
+    }
+
+    /// PUT without a body to a Trilium route that answers `{ success, message }` with HTTP 200 even when it refuses.
+    private func putExpectingSuccess(_ path: String) async throws {
+        let request = try buildRequest(path: path, method: "PUT", queryParams: nil, csrf: true, jsonBody: false)
+        let (data, response) = try await session.data(for: request)
+        try validateResponse(response, data: data)
+        struct Outcome: Decodable {
+            let success: Bool?
+            let message: String?
+        }
+        if let outcome = try? decoder.decode(Outcome.self, from: data), outcome.success == false {
+            throw APIError.rejected(outcome.message ?? "Trilium did not make the change.")
+        }
+    }
+
+    func createBranch(_ request: CreateBranchRequest) async throws -> BranchResponse {
+        _ = request
+        throw APIError.unknown("createBranch is not exposed on the native API; use createNote instead.")
+    }
+
+    func updateBranch(_ branchId: String, request: UpdateBranchRequest) async throws -> BranchResponse {
+        if let prefix = request.prefix {
+            struct Body: Encodable { let prefix: String? }
+            try await putJSONVoid("/api/branches/\(branchId)/set-prefix", body: Body(prefix: prefix), csrf: true)
+        }
+        if let exp = request.isExpanded {
+            let v = exp ? 1 : 0
+            try await putEmpty("/api/branches/\(branchId)/expanded/\(v)", csrf: true)
+        }
+        if request.notePosition != nil {
+            throw APIError.unknown("Use placeBranchInSiblingOrder for reordering.")
+        }
+        return BranchResponse(
+            branchId: branchId,
+            noteId: "",
+            parentNoteId: "",
+            prefix: request.prefix,
+            notePosition: 0,
+            isExpanded: request.isExpanded ?? false,
+            utcDateModified: nil
+        )
+    }
+
+    func deleteBranch(_ branchId: String) async throws {
+        try await delete("/api/branches/\(branchId)", queryParams: nil, csrf: true)
+    }
+
+    func deleteBranchWithNoProgressTask(_ branchId: String) async throws {
+        try await delete(
+            "/api/branches/\(branchId)",
+            queryParams: ["taskId": "no-progress-reporting", "last": "true"],
+            csrf: true
+        )
+    }
+
+    func cloneNoteToParentNote(_ noteId: String, parentNoteId: String) async throws {
+        struct Body: Encodable { var prefix: String? = nil }
+        try await putJSONVoid(
+            "/api/notes/\(noteId)/clone-to-note/\(parentNoteId)",
+            body: Body(),
+            csrf: true
+        )
+    }
+
+    func cloneNote(_ noteId: String, toParentNoteId parentNoteId: String) async throws -> CloneNoteResult {
+        struct Body: Encodable { var prefix: String? = nil }
+        var request = try buildRequest(
+            path: "/api/notes/\(noteId)/clone-to-note/\(parentNoteId)",
+            method: "PUT",
+            queryParams: nil,
+            csrf: true,
+            jsonBody: true
+        )
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try encoder.encode(Body())
+        let (data, response) = try await session.data(for: request)
+        try validateResponse(response, data: data)
+        // Every supported server answers `{ success, … }`; anything else passed validation, so it is taken as done.
+        return (try? decoder.decode(CloneNoteResult.self, from: data))
+            ?? CloneNoteResult(success: true, branchId: nil, message: nil)
+    }
+
+    func branchId(fromParentNoteId parentNoteId: String, toChildNoteId childNoteId: String) async throws -> String? {
+        let tree: TreeLoadResponse = try await postJSON(
+            "/api/tree/load",
+            body: TreeLoadRequest(noteIds: [childNoteId]),
+            csrf: true
+        )
+        return tree.branches.first { row in
+            row.noteId == childNoteId
+                && row.parentNoteId == parentNoteId
+                && row.isDeleted != true
+        }?.branchId
+    }
+
+    func moveBranchToParent(branchId: String, parentBranchId: String) async throws {
+        let request = try buildRequest(
+            path: "/api/branches/\(branchId)/move-to/\(parentBranchId)",
+            method: "PUT",
+            queryParams: nil,
+            csrf: true,
+            jsonBody: false
+        )
+        let (data, response) = try await session.data(for: request)
+        try validateResponse(response, data: data)
+        // Trilium returns HTTP 200 with `{ success: false, message }` when validation fails (e.g. cycle, duplicate placement).
+        struct BranchMoveBody: Decodable {
+            let success: Bool?
+            let message: String?
+        }
+        guard !data.isEmpty, let body = try? decoder.decode(BranchMoveBody.self, from: data) else { return }
+        if body.success == false {
+            throw APIError.serverError(statusCode: 200, message: body.message)
+        }
+    }
+
+    // MARK: - Attributes
+
+    func getAttribute(_ attributeId: String) async throws -> AttributeResponse {
+        _ = attributeId
+        throw APIError.notFound("Single-attribute GET is not available on /api; use note attributes list.")
+    }
+
+    func createAttribute(_ request: CreateAttributeRequest) async throws {
+        // Trilium expects `noteId` only in the URL; including it in the JSON body can confuse the server
+        // or produce a response shape we do not decode. Success is confirmed via a follow-up `getNote`.
+        struct Body: Encodable {
+            let type: String
+            let name: String
+            let value: String
+            let isInheritable: Bool?
+            let position: Int?
+        }
+        let body = Body(
+            type: request.type,
+            name: request.name,
+            value: request.value,
+            isInheritable: request.isInheritable,
+            position: request.position
+        )
+        var req = try buildRequest(
+            path: "/api/notes/\(request.noteId)/attributes",
+            method: "POST",
+            queryParams: nil,
+            csrf: true,
+            jsonBody: true
+        )
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try encoder.encode(body)
+        let (data, response) = try await session.data(for: req)
+        try validateResponse(response, data: data)
+        let trimmed = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmed.isEmpty, trimmed != "{}" else { return }
+        if Self.tryDecodeAttributeResponse(data) == nil {
+            Log.api.debug("createAttribute: non-empty response not decoded as AttributeResponse (refresh will load attributes); bytes=\(data.count)")
+        }
+    }
+
+    /// Best-effort decode for logging / future use; Trilium variants may use snake_case or a wrapper key.
+    private static func tryDecodeAttributeResponse(_ data: Data) -> AttributeResponse? {
+        if let r = try? JSONDecoder().decode(AttributeResponse.self, from: data) { return r }
+        let snake = JSONDecoder()
+        snake.keyDecodingStrategy = .convertFromSnakeCase
+        if let r = try? snake.decode(AttributeResponse.self, from: data) { return r }
+        struct Wrapped: Decodable {
+            let attribute: AttributeResponse?
+            let row: AttributeResponse?
+        }
+        if let w = try? snake.decode(Wrapped.self, from: data) {
+            return w.attribute ?? w.row
+        }
+        return nil
+    }
+
+    func deleteAttribute(noteId: String, attributeId: String) async throws {
+        try await delete("/api/notes/\(noteId)/attributes/\(attributeId)", queryParams: nil, csrf: true)
+    }
+
+    // MARK: - Attachments
+
+    func getNoteAttachments(_ noteId: String) async throws -> [AttachmentResponse] {
+        try await get("/api/notes/\(noteId)/attachments", csrf: false)
+    }
+
+    func getAttachment(_ attachmentId: String) async throws -> AttachmentResponse {
+        try await get("/api/attachments/\(attachmentId)", csrf: false)
+    }
+
+    func getAttachmentContent(_ attachmentId: String) async throws -> Data {
+        var req = try buildRequest(path: "/api/attachments/\(attachmentId)/open", method: "GET", queryParams: nil, csrf: false, jsonBody: false)
+        req.cachePolicy = .reloadIgnoringLocalCacheData
+        let (data, response) = try await session.data(for: req)
+        try validateResponse(response, data: data)
+        return data
+    }
+
+    func uploadAttachmentContent(_ attachmentId: String, data: Data, contentType: String) async throws {
+        try await uploadMultipartAttachment(
+            path: "/api/attachments/\(attachmentId)/file",
+            method: "PUT",
+            data: data,
+            filename: "upload.bin",
+            contentType: contentType
+        )
+    }
+
+    func uploadNoteAttachment(noteId: String, data: Data, filename: String, contentType: String) async throws -> String {
+        let respData = try await uploadMultipartAttachment(
+            path: "/api/notes/\(noteId)/attachments/upload",
+            method: "POST",
+            data: data,
+            filename: filename,
+            contentType: contentType
+        )
+        let result = try decoder.decode(UploadAttachmentResponse.self, from: respData)
+        guard result.uploaded else {
+            throw APIError.serverError(statusCode: 200, message: result.message ?? "Attachment upload failed.")
+        }
+        guard let attachmentId = TriliumAttachmentURLParser.attachmentId(fromUploadResultURL: result.url) else {
+            throw APIError.unknown("Upload succeeded but attachment ID was missing from server response.")
+        }
+        return attachmentId
+    }
+
+    private func uploadMultipartAttachment(
+        path: String,
+        method: String,
+        data: Data,
+        filename: String,
+        contentType: String
+    ) async throws -> Data {
+        let boundary = "Boundary-\(UUID().uuidString)"
+        var body = Data()
+        func append(_ s: String) { body.append(Data(s.utf8)) }
+
+        let safeFilename = filename.replacingOccurrences(of: "\"", with: "_")
+        append("--\(boundary)\r\n")
+        append("Content-Disposition: form-data; name=\"upload\"; filename=\"\(safeFilename)\"\r\n")
+        append("Content-Type: \(contentType)\r\n\r\n")
+        body.append(data)
+        append("\r\n--\(boundary)--\r\n")
+
+        let url = try Self.makeURL(baseURL: baseURL, path: path, queryParams: nil)
+        var req = URLRequest(url: url)
+        req.httpMethod = method
+        req.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        if let csrf = csrfToken {
+            req.setValue(csrf, forHTTPHeaderField: TriliumHTTP.csrfHeader)
+        }
+        applyAccessHeaders(to: &req)
+        req.httpBody = body
+
+        let (respData, response) = try await session.data(for: req)
+        try validateResponse(response, data: respData)
+        return respData
+    }
+
+    func createAttachment(_ request: CreateAttachmentRequest) async throws -> AttachmentResponse {
+        struct Body: Encodable {
+            let role: String
+            let mime: String
+            let title: String
+            let content: String
+            let position: Int?
+        }
+        let body = Body(
+            role: request.role,
+            mime: request.mime,
+            title: request.title,
+            content: request.content,
+            position: request.position
+        )
+        var req = try buildRequest(
+            path: "/api/notes/\(request.ownerId)/attachments",
+            method: "POST",
+            queryParams: nil,
+            csrf: true,
+            jsonBody: true
+        )
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try encoder.encode(body)
+        let (data, response) = try await session.data(for: req)
+        try validateResponse(response, data: data)
+
+        // Trilium returns 204 No Content for saveAttachment — no JSON body to decode.
+        if !data.isEmpty, let decoded = try? decoder.decode(AttachmentResponse.self, from: data) {
+            return decoded
+        }
+        return try await resolveAttachmentAfterCreate(
+            ownerId: request.ownerId,
+            title: request.title,
+            mime: request.mime
+        )
+    }
+
+    private func resolveAttachmentAfterCreate(ownerId: String, title: String, mime: String) async throws -> AttachmentResponse {
+        let attachments = try await getNoteAttachments(ownerId)
+        let matches = attachments.filter { $0.title == title && $0.mime == mime }
+        if let best = matches.max(by: { $0.utcDateModified < $1.utcDateModified }) {
+            return best
+        }
+        if let byTitle = attachments.last(where: { $0.title == title }) {
+            return byTitle
+        }
+        throw APIError.unknown("Attachment was created but could not be located.")
+    }
+
+    func renameAttachment(attachmentId: String, title: String) async throws {
+        struct Body: Encodable { let title: String }
+        try await putJSONVoid("/api/attachments/\(attachmentId)/rename", body: Body(title: title), csrf: true)
+    }
+
+    func deleteAttachment(_ attachmentId: String) async throws {
+        try await delete("/api/attachments/\(attachmentId)", queryParams: nil, csrf: true)
+    }
+
+    func convertAttachmentToNote(attachmentId: String) async throws -> ConvertAttachmentToNoteResponse {
+        struct Empty: Encodable {}
+        return try await postJSON(
+            "/api/attachments/\(attachmentId)/convert-to-note",
+            body: Empty(),
+            csrf: true
+        )
+    }
+
+    func getAttachmentOCRText(attachmentId: String) async throws -> AttachmentOCRTextResponse {
+        var request = try buildRequest(
+            path: "/api/ocr/attachments/\(attachmentId)/text",
+            method: "GET",
+            queryParams: nil,
+            csrf: false,
+            jsonBody: false
+        )
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        let (data, response) = try await session.data(for: request)
+        try validateResponse(response, data: data)
+        do {
+            return try decoder.decode(AttachmentOCRTextResponse.self, from: data)
+        } catch {
+            Log.api.error("Decoding failed for /api/ocr/attachments/\(attachmentId)/text: \(error)")
+            throw APIError.decodingFailed(error.localizedDescription)
+        }
+    }
+
+    func processAttachmentOCR(attachmentId: String, forceReprocess: Bool) async throws -> ProcessAttachmentOCRResponse {
+        struct Body: Encodable { let forceReprocess: Bool }
+        var request = try buildRequest(
+            path: "/api/ocr/process-attachment/\(attachmentId)",
+            method: "POST",
+            queryParams: nil,
+            csrf: true,
+            jsonBody: true
+        )
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try encoder.encode(Body(forceReprocess: forceReprocess))
+        request.timeoutInterval = Self.ocrRequestTimeout
+        let (data, response) = try await dataForLongRunningRequest(request)
+        try validateResponse(response, data: data)
+        do {
+            return try decoder.decode(ProcessAttachmentOCRResponse.self, from: data)
+        } catch {
+            Log.api.error("Decoding failed for /api/ocr/process-attachment/\(attachmentId): \(error)")
+            throw APIError.decodingFailed(error.localizedDescription)
+        }
+    }
+
+    /// Tesseract often sends no bytes for well over the default 30s idle timeout.
+    private static let ocrRequestTimeout: TimeInterval = 600
+    /// Office conversion is CPU-bound; the default session times out at 30s.
+    private static let officePreviewTimeout: TimeInterval = 120
+
+    /// Rendering a large workbook with images can outlast the default 30 s timeout.
+    private static let spreadsheetXlsxExportTimeout: TimeInterval = 120
+
+    func exportSpreadsheetXlsx(noteId: String) async throws -> Data {
+        var request = try buildRequest(path: "/api/spreadsheet/\(noteId)/xlsx", method: "GET", queryParams: nil, csrf: false, jsonBody: false)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.timeoutInterval = Self.spreadsheetXlsxExportTimeout
+        let (data, response) = try await dataForLongRunningRequest(request, timeout: Self.spreadsheetXlsxExportTimeout)
+        try validateResponse(response, data: data)
+        // An .xlsx file is a zip archive; anything else (an HTML page from an older server) is not a workbook.
+        guard data.starts(with: [0x50, 0x4B]) else {
+            throw APIError.invalidResponse
+        }
+        return data
+    }
+
+    func getNoteOfficePreview(_ noteId: String) async throws -> OfficePreviewResponse {
+        try await getOfficePreview(path: "/api/notes/\(noteId)/office-preview")
+    }
+
+    func getAttachmentOfficePreview(_ attachmentId: String) async throws -> OfficePreviewResponse {
+        try await getOfficePreview(path: "/api/attachments/\(attachmentId)/office-preview")
+    }
+
+    private func getOfficePreview(path: String) async throws -> OfficePreviewResponse {
+        var request = try buildRequest(path: path, method: "GET", queryParams: nil, csrf: false, jsonBody: false)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.timeoutInterval = Self.officePreviewTimeout
+        let (data, response) = try await dataForLongRunningRequest(request, timeout: Self.officePreviewTimeout)
+        try validateResponse(response, data: data)
+        let contentType = (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Content-Type")
+        do {
+            return try Self.decodeOfficePreview(data: data, contentType: contentType)
+        } catch {
+            Log.api.error("Decoding failed for \(path): \(error)")
+            throw APIError.decodingFailed(error.localizedDescription)
+        }
+    }
+
+    /// v0.105 wraps the fragment as JSON `{ html }`; v0.106+ sends the HTML itself as the body.
+    static func decodeOfficePreview(data: Data, contentType: String?) throws -> OfficePreviewResponse {
+        let isJSONType = contentType?.lowercased().contains("json") == true
+        let firstByte = data.first { !Character(UnicodeScalar($0)).isWhitespace }
+        if isJSONType || firstByte == UInt8(ascii: "{") {
+            return try JSONDecoder().decode(OfficePreviewResponse.self, from: data)
+        }
+        return OfficePreviewResponse(html: String(decoding: data, as: UTF8.self))
+    }
+
+    private func dataForLongRunningRequest(_ request: URLRequest) async throws -> (Data, URLResponse) {
+        try await dataForLongRunningRequest(request, timeout: Self.ocrRequestTimeout)
+    }
+
+    private func dataForLongRunningRequest(_ request: URLRequest, timeout: TimeInterval) async throws -> (Data, URLResponse) {
+        var request = request
+        request.timeoutInterval = timeout
+        return try await longRunningSession.data(for: request)
+    }
+
+    /// One session for slow calls (OCR, Office previews, exports, bulk delete), kept for the client's life so each
+    /// call reuses its connection instead of a new TLS handshake. Each request sets its own idle timeout; the session
+    /// allows the longest total time any of them needs.
+    private var longRunningSession: URLSession {
+        if let longRunningSessionStorage { return longRunningSessionStorage }
+        let cfg = URLSessionConfiguration.default
+        cfg.httpCookieStorage = httpCookieStorage
+        cfg.httpShouldSetCookies = true
+        cfg.httpCookieAcceptPolicy = .always
+        cfg.timeoutIntervalForResource = Self.longestRequestTimeout
+        cfg.waitsForConnectivity = injectedProtocolClasses == nil
+        if let injectedProtocolClasses {
+            cfg.protocolClasses = injectedProtocolClasses
+        }
+        let session = URLSession(configuration: cfg, delegate: ServerCertificateSessionDelegate(), delegateQueue: nil)
+        longRunningSessionStorage = session
+        return session
+    }
+
+    private var longRunningSessionStorage: URLSession?
+
+    private static let longestRequestTimeout = max(
+        ocrRequestTimeout, bulkDeleteTimeout, officePreviewTimeout, spreadsheetXlsxExportTimeout
+    )
+
+    deinit {
+        longRunningSessionStorage?.finishTasksAndInvalidate()
+    }
+
+    // MARK: - Request helpers
+
+    private func get<T: Decodable>(
+        _ path: String,
+        queryParams: [String: String]? = nil,
+        csrf: Bool,
+        pathIsPercentEncoded: Bool = false
+    ) async throws -> T {
+        let request = try buildRequest(
+            path: path,
+            method: "GET",
+            queryParams: queryParams,
+            csrf: csrf,
+            jsonBody: false,
+            pathIsPercentEncoded: pathIsPercentEncoded
+        )
+        let (data, response) = try await session.data(for: request)
+        try validateResponse(response, data: data)
+        do {
+            return try decoder.decode(T.self, from: data)
+        } catch {
+            Log.api.error("Decoding failed for \(path): \(error)")
+            throw APIError.decodingFailed(error.localizedDescription)
+        }
+    }
+
+    private func getRaw(_ path: String, queryParams: [String: String]?, csrf: Bool) async throws -> Data {
+        let request = try buildRequest(path: path, method: "GET", queryParams: queryParams, csrf: csrf, jsonBody: false)
+        let (data, response) = try await session.data(for: request)
+        try validateResponse(response, data: data)
+        return data
+    }
+
+    private func postJSON<B: Encodable, T: Decodable>(_ path: String, queryParams: [String: String]? = nil, body: B, csrf: Bool) async throws -> T {
+        var request = try buildRequest(path: path, method: "POST", queryParams: queryParams, csrf: csrf, jsonBody: true)
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try encoder.encode(body)
+        let (data, response) = try await session.data(for: request)
+        try validateResponse(response, data: data)
+        return try decoder.decode(T.self, from: data)
+    }
+
+    private func putJSONVoid<B: Encodable>(_ path: String, body: B, csrf: Bool) async throws {
+        var request = try buildRequest(path: path, method: "PUT", queryParams: nil, csrf: csrf, jsonBody: true)
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try encoder.encode(body)
+        let (data, response) = try await session.data(for: request)
+        try validateResponse(response, data: data)
+        _ = data
+    }
+
+    private func putJSON<B: Encodable, T: Decodable>(_ path: String, body: B, csrf: Bool) async throws -> T {
+        var request = try buildRequest(path: path, method: "PUT", queryParams: nil, csrf: csrf, jsonBody: true)
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try encoder.encode(body)
+        let (data, response) = try await session.data(for: request)
+        try validateResponse(response, data: data)
+        return try decoder.decode(T.self, from: data)
+    }
+
+    private func putEmpty(_ path: String, csrf: Bool) async throws {
+        let request = try buildRequest(path: path, method: "PUT", queryParams: nil, csrf: csrf, jsonBody: false)
+        let (data, response) = try await session.data(for: request)
+        try validateResponse(response, data: data)
+    }
+
+    private func postWithoutBody(path: String, method: String, csrf: Bool) async throws {
+        let request = try buildRequest(path: path, method: method, queryParams: nil, csrf: csrf, jsonBody: false)
+        let (data, response) = try await session.data(for: request)
+        try validateResponse(response, data: data)
+    }
+
+    private func delete(_ path: String, queryParams: [String: String]?, csrf: Bool) async throws {
+        let request = try buildRequest(path: path, method: "DELETE", queryParams: queryParams, csrf: csrf, jsonBody: false)
+        let (data, response) = try await session.data(for: request)
+        try validateResponse(response, data: data)
+    }
+
+    private func buildRequest(
+        path: String,
+        method: String,
+        queryParams: [String: String]?,
+        csrf: Bool,
+        jsonBody: Bool,
+        pathIsPercentEncoded: Bool = false
+    ) throws -> URLRequest {
+        let url = try Self.makeURL(
+            baseURL: baseURL,
+            path: path,
+            queryParams: queryParams,
+            pathIsPercentEncoded: pathIsPercentEncoded
+        )
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        if jsonBody || method != "GET" {
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+        } else {
+            request.setValue("application/json, text/html;q=0.8,*/*;q=0.5", forHTTPHeaderField: "Accept")
+        }
+
+        if csrf, let csrfToken {
+            request.setValue(csrfToken, forHTTPHeaderField: TriliumHTTP.csrfHeader)
+        }
+
+        applyAccessHeaders(to: &request)
+
+        return request
+    }
+
+    private func applyAccessHeaders(to request: inout URLRequest) {
+        applyJarCookies(to: &request)
+        guard let accessHeaders else { return }
+        for (name, value) in accessHeaders {
+            request.setValue(value, forHTTPHeaderField: name)
+        }
+    }
+
+    /// `HTTPCookieStorage.cookies(for:)` is unreliable for imported SSO cookies; send them explicitly.
+    private func applyJarCookies(to request: inout URLRequest) {
+        guard let url = request.url, let host = url.host?.lowercased() else { return }
+        let fromURL = httpCookieStorage.cookies(for: url) ?? []
+        let fromHost = (httpCookieStorage.cookies ?? []).filter {
+            Self.cookieDomainMatchesHost($0.domain, host: host)
+        }
+        var seen = Set<String>()
+        var parts: [String] = []
+        for cookie in fromURL + fromHost {
+            let key = cookie.name.lowercased()
+            guard seen.insert(key).inserted else { continue }
+            parts.append("\(cookie.name)=\(cookie.value)")
+        }
+        guard !parts.isEmpty else { return }
+        request.setValue(parts.joined(separator: "; "), forHTTPHeaderField: "Cookie")
+    }
+
+    /// Encodes one path segment, `/` included, so a value such as a search query stays a single segment.
+    static func percentEncodePathSegment(_ segment: String) -> String {
+        var allowed = CharacterSet.urlPathAllowed
+        allowed.remove(charactersIn: "/")
+        return segment.addingPercentEncoding(withAllowedCharacters: allowed) ?? segment
+    }
+
+    /// `pathIsPercentEncoded` keeps escapes already in `path` (see `percentEncodePathSegment`); otherwise
+    /// the `URLComponents.path` setter encodes it, which would turn an existing `%2F` into `%252F`.
+    static func makeURL(
+        baseURL: URL,
+        path: String,
+        queryParams: [String: String]?,
+        pathIsPercentEncoded: Bool = false
+    ) throws -> URL {
+        guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else { throw APIError.invalidURL }
+        let appendPath = path.hasPrefix("/") ? String(path.dropFirst()) : path
+        var basePath = pathIsPercentEncoded ? components.percentEncodedPath : components.path
+        if basePath.isEmpty { basePath = "/" }
+        let joined = basePath.hasSuffix("/") ? basePath + appendPath : basePath + "/" + appendPath
+        let fullPath = joined.replacingOccurrences(of: "//", with: "/")
+        if pathIsPercentEncoded {
+            components.percentEncodedPath = fullPath
+        } else {
+            components.path = fullPath
+        }
+        if let queryParams, !queryParams.isEmpty {
+            components.queryItems = queryParams.map { URLQueryItem(name: $0.key, value: $0.value) }
+        }
+        guard let url = components.url else { throw APIError.invalidURL }
+        return url
+    }
+
+    private func validateResponse(_ response: URLResponse, data: Data) throws {
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        // Capture CSRF cookie from ANY API response — newer TriliumNext (Vite SPA)
+        // sets _csrf on API GETs, not on the HTML page load.
+        captureCsrfFromResponse(http)
+
+        switch http.statusCode {
+        case 200...299:
+            return
+        case 401:
+            isSessionValid = false
+            throw APIError.unauthorized
+        case 404:
+            let message = extractErrorMessage(from: data) ?? http.url?.path ?? "resource"
+            throw APIError.notFound(message)
+        default:
+            let message = extractErrorMessage(from: data)
+            throw APIError.serverError(statusCode: http.statusCode, message: message)
+        }
+    }
+
+    /// Opportunistically captures `_csrf` from any API response's Set-Cookie header.
+    private func captureCsrfFromResponse(_ response: HTTPURLResponse) {
+        TriliumCookieResponseParser.storeCookies(from: response, in: httpCookieStorage)
+        TriliumCookieResponseParser.manuallyStoreCsrfCookie(from: response, in: httpCookieStorage)
+
+        if csrfToken == nil {
+            if let fromHeader = Self.extractCsrfFromSetCookieHeader(response) {
+                csrfToken = fromHeader
+            } else if let fromCookie = extractCsrfTokenFromCookie() {
+                csrfToken = fromCookie
+            }
+        }
+    }
+
+    private func extractErrorMessage(from data: Data) -> String? {
+        struct ErrorBody: Decodable {
+            let message: String?
+            let code: String?
+        }
+        guard let body = try? decoder.decode(ErrorBody.self, from: data) else { return nil }
+        if let message = body.message { return message }
+        return body.code
+    }
+
+    private static func nativeDetailFallback(from row: TreeLoadNoteRow, timestamps: NoteTimestampsRow? = nil) -> NativeNoteDetailRow {
+        NativeNoteDetailRow(
+            noteId: row.noteId,
+            title: row.title,
+            isProtected: row.isProtected,
+            type: row.type,
+            mime: row.mime,
+            blobId: row.blobId,
+            isDeleted: row.isDeleted,
+            dateCreated: timestamps?.dateCreated,
+            dateModified: timestamps?.dateModified,
+            utcDateCreated: timestamps?.utcDateCreated,
+            utcDateModified: timestamps?.utcDateModified
+        )
+    }
+
+    /// Child branches under `parentNoteId` as API models (same filtering as `buildNoteResponse`).
+    private static func liveChildBranchResponses(index: TreeLoadIndex, parentNoteId: String) -> [BranchResponse] {
+        index.liveChildBranches(of: parentNoteId).map { row in
+            BranchResponse(
+                branchId: row.branchId,
+                noteId: row.noteId,
+                parentNoteId: row.parentNoteId,
+                prefix: row.prefix,
+                notePosition: row.notePosition,
+                isExpanded: row.isExpanded,
+                utcDateModified: nil
+            )
+        }
+    }
+
+    private static func buildNoteResponse(detail: NativeNoteDetailRow, index: TreeLoadIndex, noteId: String) -> NoteResponse {
+        let parentBranches = index.parentBranches(of: noteId)
+        var seenParents = Set<String>()
+        let parentNoteIds = parentBranches.map(\.parentNoteId).filter { seenParents.insert($0).inserted }
+        let liveChildBranches = index.liveChildBranches(of: noteId)
+        let attrResponses = index.attributes(of: noteId).map {
+            AttributeResponse(
+                attributeId: $0.attributeId,
+                noteId: $0.noteId,
+                type: $0.type,
+                name: $0.name,
+                value: $0.value,
+                position: $0.position,
+                isInheritable: $0.isInheritable,
+                utcDateModified: nil
+            )
+        }
+
+        var response = NoteResponse(
+            noteId: detail.noteId,
+            isProtected: detail.isProtected,
+            title: detail.title ?? "",
+            type: detail.type,
+            mime: detail.mime,
+            blobId: detail.blobId,
+            isDeleted: detail.isDeleted ?? false,
+            dateCreated: detail.dateCreated ?? "",
+            dateModified: detail.dateModified ?? "",
+            utcDateCreated: detail.utcDateCreated ?? "",
+            utcDateModified: detail.utcDateModified ?? "",
+            parentNoteIds: parentNoteIds,
+            childNoteIds: liveChildBranches.map(\.noteId),
+            parentBranchIds: parentBranches.map(\.branchId),
+            childBranchIds: liveChildBranches.map(\.branchId),
+            attributes: attrResponses
+        )
+        response.hasShareAncestor = index.hasAncestor(TriliumSharing.shareRootNoteId, of: noteId)
+        return response
+    }
+}
+
+/// A `tree/load` response grouped in one pass, so building each note of a batch doesn't rescan the whole response
+/// (it repeats every ancestor's full child list, which for a big folder is thousands of rows per note).
+private struct TreeLoadIndex {
+    private var branchesByNoteId: [String: [TreeLoadBranchRow]] = [:]
+    private var branchesByParentId: [String: [TreeLoadBranchRow]] = [:]
+    private var attributesByNoteId: [String: [TreeLoadAttributeRow]] = [:]
+    private var deletedNoteIds = Set<String>()
+
+    init(_ tree: TreeLoadResponse) {
+        for branch in tree.branches {
+            branchesByNoteId[branch.noteId, default: []].append(branch)
+            branchesByParentId[branch.parentNoteId, default: []].append(branch)
+        }
+        for attribute in tree.attributes {
+            attributesByNoteId[attribute.noteId, default: []].append(attribute)
+        }
+        for note in tree.notes where note.isDeleted == true {
+            deletedNoteIds.insert(note.noteId)
+        }
+    }
+
+    /// Parents by branch id, as `reconcileCachedNoteBranchesMetadata` orders them.
+    func parentBranches(of noteId: String) -> [TreeLoadBranchRow] {
+        (branchesByNoteId[noteId] ?? []).sorted { $0.branchId < $1.branchId }
+    }
+
+    /// Children by `notePosition`, ties by branch id: the order `reconcileCachedNoteBranchesMetadata` rebuilds, so a
+    /// sync that changed nothing writes nothing. Leaves out deleted branches and branches to notes the response marks
+    /// deleted (when present — child notes are often omitted from `notes`).
+    func liveChildBranches(of parentNoteId: String) -> [TreeLoadBranchRow] {
+        (branchesByParentId[parentNoteId] ?? [])
+            .filter { $0.isDeleted != true && !deletedNoteIds.contains($0.noteId) }
+            .sorted { $0.notePosition != $1.notePosition ? $0.notePosition < $1.notePosition : $0.branchId < $1.branchId }
+    }
+
+    func attributes(of noteId: String) -> [TreeLoadAttributeRow] {
+        (attributesByNoteId[noteId] ?? []).sorted { $0.position < $1.position }
+    }
+
+    /// Whether `ancestorId` is above `noteId` on any path (clones included). `tree/load` returns every ancestor's
+    /// parent branches, so this needs no further requests.
+    func hasAncestor(_ ancestorId: String, of noteId: String) -> Bool {
+        var visited: Set<String> = [noteId]
+        var queue = [noteId]
+        var head = 0
+        while head < queue.count {
+            let id = queue[head]
+            head += 1
+            for branch in branchesByNoteId[id] ?? [] where branch.isDeleted != true {
+                if branch.parentNoteId == ancestorId { return true }
+                if visited.insert(branch.parentNoteId).inserted {
+                    queue.append(branch.parentNoteId)
+                }
+            }
+        }
+        return false
+    }
+}
+
+/// iOS often collapses multiple `Set-Cookie` lines in `allHeaderFields`; this API still extracts cookies for the jar.
+fileprivate enum TriliumCookieResponseParser {
+    static func storeCookies(from response: HTTPURLResponse, in jar: HTTPCookieStorage) {
+        guard let url = response.url else { return }
+        var headerDict: [String: String] = [:]
+        headerDict.reserveCapacity(response.allHeaderFields.count)
+        for (k, v) in response.allHeaderFields {
+            guard let key = k as? String, let value = v as? String else { continue }
+            headerDict[key] = value
+        }
+
+        let parsed = HTTPCookie.cookies(withResponseHeaderFields: headerDict, for: url)
+        let normalized = TriliumCookieNormalizer.normalizeForSharedJar(parsed, requestURL: url)
+        jar.setCookies(normalized, for: url, mainDocumentURL: url)
+        for c in normalized {
+            jar.setCookie(c)
+        }
+    }
+
+    private static let csrfCookieNames = ["trilium-csrf", "_csrf", "csrf-token"]
+
+    /// Parses CSRF cookie values from raw `Set-Cookie`. `HTTPCookie.cookies()` can drop them
+    /// when multiple cookies with comma-containing `Expires` dates are collapsed.
+    static func manuallyStoreCsrfCookie(from response: HTTPURLResponse, in jar: HTTPCookieStorage) {
+        guard let url = response.url, let host = url.host?.lowercased() else { return }
+        var rawSetCookie: String?
+        for (key, value) in response.allHeaderFields {
+            if let k = key as? String, k.lowercased() == "set-cookie", let v = value as? String {
+                rawSetCookie = v
+                break
+            }
+        }
+        guard let raw = rawSetCookie,
+              let parsed = parseCsrfCookiePair(fromSetCookie: raw) else { return }
+
+        var props: [HTTPCookiePropertyKey: Any] = [
+            .name: parsed.name,
+            .value: parsed.value,
+            .domain: host,
+            .path: "/"
+        ]
+        if url.scheme?.lowercased() == "https" {
+            props[.secure] = "TRUE"
+        }
+        if let cookie = HTTPCookie(properties: props) {
+            jar.setCookie(cookie)
+        }
+    }
+
+    /// Returns the token portion (before `|`) from the first recognized CSRF cookie in `Set-Cookie`.
+    static func extractCsrfTokenValue(fromSetCookie raw: String) -> String? {
+        guard let parsed = parseCsrfCookiePair(fromSetCookie: raw) else { return nil }
+        return tokenFromCsrfCookieValue(parsed.value)
+    }
+
+    private static func parseCsrfCookiePair(fromSetCookie raw: String) -> (name: String, value: String)? {
+        for name in csrfCookieNames {
+            guard let nameRange = raw.range(of: "\(name)=", options: .caseInsensitive) else { continue }
+            let afterEquals = raw[nameRange.upperBound...]
+            let valueEnd = afterEquals.firstIndex(of: ";") ?? afterEquals.endIndex
+            let fullValue = String(afterEquals[afterEquals.startIndex..<valueEnd])
+            guard !fullValue.isEmpty else { continue }
+            return (name, fullValue)
+        }
+        return nil
+    }
+
+    private static func tokenFromCsrfCookieValue(_ fullValue: String) -> String? {
+        let decoded = fullValue.removingPercentEncoding ?? fullValue
+        if let pipe = decoded.firstIndex(of: "|") {
+            let token = String(decoded[decoded.startIndex..<pipe]).trimmingCharacters(in: .whitespacesAndNewlines)
+            return token.isEmpty ? nil : token
+        }
+        let trimmed = decoded.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+}
+
+/// Follows redirects only on the Trilium host. Authelia/Cloudflare login hops otherwise loop.
+private final class SameHostRedirectDelegate: NSObject, URLSessionTaskDelegate {
+    private let allowedHost: String
+
+    init(allowedHost: String) {
+        self.allowedHost = allowedHost.lowercased()
+        super.init()
+    }
+
+    // Client certificate and trusted self-signed certificate (`ServerCertificates`).
+    func urlSession(
+        _ session: URLSession,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        let (disposition, credential) = ServerCertificates.handle(challenge)
+        completionHandler(disposition, credential)
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        let (disposition, credential) = ServerCertificates.handle(challenge)
+        completionHandler(disposition, credential)
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        willPerformHTTPRedirection response: HTTPURLResponse,
+        newRequest request: URLRequest,
+        completionHandler: @escaping (URLRequest?) -> Void
+    ) {
+        guard let host = request.url?.host?.lowercased(), host == allowedHost else {
+            Log.auth.debug("SSO/API blocked off-host redirect to \(request.url?.host ?? "nil")")
+            completionHandler(nil)
+            return
+        }
+        let path = request.url?.path.lowercased() ?? ""
+        if path == "/login" || path.hasPrefix("/login/") {
+            Log.auth.debug("SSO/API stopped redirect to login page")
+            completionHandler(nil)
+            return
+        }
+        completionHandler(request)
+    }
+}
+
+/// Stops after the first 3xx. Also re-applies `Set-Cookie` parsing here — some stacks mishandle cookies when canceling redirects.
+private final class TriliumStopRedirectDelegate: NSObject, URLSessionTaskDelegate {
+    private let cookieStorage: HTTPCookieStorage
+
+    init(cookieStorage: HTTPCookieStorage) {
+        self.cookieStorage = cookieStorage
+        super.init()
+    }
+
+    // Client certificate and trusted self-signed certificate (`ServerCertificates`).
+    func urlSession(
+        _ session: URLSession,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        let (disposition, credential) = ServerCertificates.handle(challenge)
+        completionHandler(disposition, credential)
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        let (disposition, credential) = ServerCertificates.handle(challenge)
+        completionHandler(disposition, credential)
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        willPerformHTTPRedirection response: HTTPURLResponse,
+        newRequest request: URLRequest,
+        completionHandler: @escaping (URLRequest?) -> Void
+    ) {
+        TriliumCookieResponseParser.storeCookies(from: response, in: cookieStorage)
+        TriliumCookieResponseParser.manuallyStoreCsrfCookie(from: response, in: cookieStorage)
+        completionHandler(nil)
+    }
+}
+
+// MARK: - Small Encodable helpers
+
+private struct TreeLoadRequest: Encodable {
+    let noteIds: [String]
+}
+
+/// One note's entry in the `POST /api/notes/metadata` answer (Trilium 0.106+).
+private struct NoteTimestampsRow: Decodable {
+    var dateCreated: String?
+    var dateModified: String?
+    var utcDateCreated: String?
+    var utcDateModified: String?
+}
+
+extension FullSyncCachedNoteState {
+    /// The `tree/load` row shows nothing new: same body, title, type, mime and protection.
+    fileprivate func matches(_ row: TreeLoadNoteRow) -> Bool {
+        guard let blobId, blobId == row.blobId else { return false }
+        return title == row.title && type == row.type && mime == row.mime && isProtected == row.isProtected
+    }
+}
+
+private struct CreateNoteNativeResponse: Decodable {
+    struct NB: Decodable {
+        let noteId: String
+    }
+
+    struct BR: Decodable {
+        let branchId: String
+        let noteId: String
+        let parentNoteId: String
+        let prefix: String?
+        let notePosition: Int
+        let isExpanded: Bool?
+        let utcDateModified: String?
+    }
+
+    let note: NB
+    let branch: BR
+}

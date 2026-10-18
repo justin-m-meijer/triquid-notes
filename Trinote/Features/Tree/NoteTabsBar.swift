@@ -1,0 +1,704 @@
+import SwiftUI
+import UIKit
+
+struct NoteTabsBar: View {
+    /// The `OpenNoteTab.id` of the currently visible open-tab row, if any.
+    let currentOpenTabId: String?
+    let onSelect: (OpenNoteTab) -> Void
+    var onOpenTabRemoved: ((OpenNoteTab) -> Void)? = nil
+    var onTabsBecameEmpty: (() -> Void)? = nil
+    var onReorderActiveChanged: ((Bool) -> Void)? = nil
+    /// Above the note (iPad split layout, like Trilium's tab row) rather than below it: the hairline moves
+    /// to the bottom edge.
+    var isAtTop: Bool = false
+
+    @Environment(AppState.self) private var appState
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @State private var tabs: [OpenNoteTab] = []
+    @State private var showAddNotePicker = false
+    @State private var draggingTabId: String?
+    @State private var dragTranslation: CGFloat = 0
+    @State private var suppressTabSelection = false
+    @State private var tabSelectionSuppressionReset: DispatchWorkItem?
+
+    private static let reorderLongPressDuration: TimeInterval = 0.45
+    private static let reorderHandleWidth: CGFloat = 14
+
+    private static let addButtonWidth: CGFloat = 44
+    private static let horizontalPadding: CGFloat = 6
+    private static let tabGap: CGFloat = 5
+    /// Slightly more than 3 “full” columns so the last tab peeks (scroll affordance).
+    private static let visibleTabSlots: CGFloat = 3.3
+    /// Handle + icon + paddings + close control; title width is added on top.
+    private static let tabChromeWidth: CGFloat = reorderHandleWidth + 2 + 16 + 4 + 22
+    private static let titleWidthSlack: CGFloat = 4
+    private static let minTabWidth: CGFloat = 64
+    /// Wide (iPad) bars fit more tabs: each tab is capped here instead of taking a third of the bar.
+    private static let regularMaxTabWidth: CGFloat = 220
+    /// Outer bar height; matches the original single-line look while still fitting 2 wrapped lines of footnote text.
+    private static let barHeight: CGFloat = 52
+    /// Inner cell height — leaves a small vertical pad inside the bar.
+    fileprivate static let cellHeight: CGFloat = 40
+
+    var body: some View {
+        Group {
+            if tabs.isEmpty {
+                // Switched on but nothing open yet: say so, instead of an invisible bar.
+                HStack(spacing: 8) {
+                    Image(systemName: "rectangle.stack")
+                        .foregroundStyle(Color.trinoteTextSecondary)
+                    Text(String(localized: "Open notes appear here", comment: "Open-notes bar: empty state"))
+                        .font(.footnote)
+                        .foregroundStyle(Color.trinoteTextSecondary)
+                    Spacer(minLength: 0)
+                    addTabButton
+                        .frame(width: Self.addButtonWidth, height: Self.barHeight)
+                }
+                .padding(.leading, 16)
+                .frame(height: Self.barHeight)
+                .glassEffect(.regular, in: .capsule)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 8)
+            } else {
+                GeometryReader { geo in
+                    let scrollW = max(0, geo.size.width - Self.addButtonWidth)
+                    let titles = tabs.map { displayTitle(for: $0) }
+                    let maxTabW = maxTabWidth(scrollInnerWidth: scrollW, tabCount: tabs.count)
+                    let tabWidths = fittedTabWidths(titles: titles, maxWidth: maxTabW)
+                    let contentW = tabsContentWidth(tabWidths: tabWidths)
+                    HStack(alignment: .center, spacing: 0) {
+                        NoteTabsHorizontalScrollView(
+                            contentWidth: contentW,
+                            isScrollEnabled: draggingTabId == nil,
+                            activeTabId: currentOpenTabId,
+                            tabIds: tabs.map(\.id),
+                            tabWidths: tabWidths,
+                            tabGap: Self.tabGap,
+                            horizontalPadding: Self.horizontalPadding,
+                            reorderHandleWidth: Self.reorderHandleWidth,
+                            reorderLongPressDuration: Self.reorderLongPressDuration,
+                            onReorderBegan: { index in
+                                guard tabs.indices.contains(index) else { return }
+                                tabSelectionSuppressionReset?.cancel()
+                                suppressTabSelection = true
+                                draggingTabId = tabs[index].id
+                                dragTranslation = 0
+                                onReorderActiveChanged?(true)
+                            },
+                            onReorderChanged: { translation in
+                                dragTranslation = translation
+                            },
+                            onReorderEnded: { translation in
+                                defer {
+                                    draggingTabId = nil
+                                    dragTranslation = 0
+                                    onReorderActiveChanged?(false)
+                                    scheduleTabSelectionSuppressionReset()
+                                }
+                                guard let draggedId = draggingTabId,
+                                      let from = tabs.firstIndex(where: { $0.id == draggedId }) else { return }
+                                let to = dropIndex(movingFrom: from, translation: translation, tabWidths: tabWidths)
+                                guard from != to else { return }
+                                applyTabReorder(from: from, to: to)
+                            },
+                            onReorderCancelled: {
+                                draggingTabId = nil
+                                dragTranslation = 0
+                                onReorderActiveChanged?(false)
+                                scheduleTabSelectionSuppressionReset()
+                            },
+                            menuForTab: { index in
+                                tabs.indices.contains(index) ? tabMenu(for: tabs[index]) : nil
+                            }
+                        ) {
+                            HStack(spacing: Self.tabGap) {
+                                ForEach(Array(tabs.enumerated()), id: \.element.id) { index, tab in
+                                    let title = titles[index]
+                                    let icon = rowIconContext(for: tab)
+                                    let isDragging = draggingTabId == tab.id
+                                    NoteTabCell(
+                                        displayTitle: title,
+                                        iconClass: icon.iconClass,
+                                        fallbackNoteType: icon.fallbackNoteType,
+                                        isActive: currentOpenTabId != nil && tab.id == currentOpenTabId,
+                                        width: tabWidths[index],
+                                        reorderHandleWidth: Self.reorderHandleWidth,
+                                        onTap: {
+                                            guard draggingTabId == nil, !suppressTabSelection else { return }
+                                            onSelect(tab)
+                                        },
+                                        onClose: { removeTab(tab) }
+                                    )
+                                    .offset(x: isDragging ? dragTranslation : 0)
+                                    .scaleEffect(isDragging ? 1.04 : 1)
+                                    .shadow(color: isDragging ? .black.opacity(0.18) : .clear, radius: 6, y: 2)
+                                    .zIndex(isDragging ? 10 : 0)
+                                    .opacity(isDragging ? 0.92 : 1)
+                                }
+                            }
+                            .padding(.vertical, 2)
+                            .padding(.leading, Self.horizontalPadding)
+                            .frame(width: contentW, alignment: .leading)
+                        }
+                        .frame(width: scrollW, height: Self.barHeight, alignment: .leading)
+
+                        addTabButton
+                            .frame(width: Self.addButtonWidth, height: Self.barHeight, alignment: .center)
+                    }
+                }
+                .frame(height: Self.barHeight)
+                // A floating Liquid Glass bar above the content, like the system's own bars.
+                .glassEffect(.regular, in: .capsule)
+                .clipShape(.capsule)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 8)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(String(localized: "Open notes", comment: "A11y: open note tab strip"))
+        .task { reload() }
+        .onChange(of: appState.activeProfile?.id) { _, _ in reload() }
+        .onReceive(NotificationCenter.default.publisher(for: .openNoteTabsChanged)) { _ in
+            reload()
+        }
+        .sheet(isPresented: $showAddNotePicker) {
+            NotePickerSheet(
+                excludeNoteId: nil,
+                navigationTitleOverride: String(
+                    localized: "Add to open tabs",
+                    comment: "Open-tab picker: navigation title (search to add a note as a tab)"
+                )
+            ) { id, title in
+                addTabForPickedNote(noteId: id, title: title)
+            }
+        }
+    }
+
+    private var addTabButton: some View {
+        Button {
+            showAddNotePicker = true
+        } label: {
+            Image(systemName: "plus.circle.fill")
+                .font(.title3)
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.tint)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(String(localized: "Add open tab", comment: "A11y: add note to tab bar"))
+    }
+
+    /// Upper bound for one tab: ~3.3 “slots” in the scroll area, with a little space for the gaps.
+    /// Fewer tabs may use a wider cap so longer titles stay readable.
+    private func maxTabWidth(scrollInnerWidth: CGFloat, tabCount: Int) -> CGFloat {
+        let inner = max(0, scrollInnerWidth)
+        let base = max(Self.minTabWidth, (inner - Self.tabGap * 2) / Self.visibleTabSlots)
+        let width: CGFloat
+        switch tabCount {
+        case 1: width = base * 2
+        case 2: width = base * 1.5
+        case 3: width = base * 1.25
+        default: width = base
+        }
+        return horizontalSizeClass == .regular ? min(width, Self.regularMaxTabWidth) : width
+    }
+
+    /// Size each tab to its title, clamped between the chrome minimum and `maxWidth`.
+    private func fittedTabWidths(titles: [String], maxWidth: CGFloat) -> [CGFloat] {
+        titles.map { title in
+            let ideal = Self.tabChromeWidth + ceil(Self.measuredTitleWidth(title)) + Self.titleWidthSlack
+            return min(max(ideal, Self.minTabWidth), maxWidth)
+        }
+    }
+
+    private static func measuredTitleWidth(_ title: String) -> CGFloat {
+        let font = UIFont.preferredFont(forTextStyle: .footnote)
+        let bounds = (title as NSString).boundingRect(
+            with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: [.font: font],
+            context: nil
+        )
+        return bounds.width
+    }
+
+    private func tabsContentWidth(tabWidths: [CGFloat]) -> CGFloat {
+        guard !tabWidths.isEmpty else { return 0 }
+        return Self.horizontalPadding
+            + tabWidths.reduce(0, +)
+            + CGFloat(tabWidths.count - 1) * Self.tabGap
+    }
+
+    private func reload() {
+        guard let profileId = appState.activeProfile?.id else {
+            tabs = []
+            return
+        }
+        tabs = (try? PersistenceManager.shared.fetchOpenNoteTabs(serverProfileId: profileId)) ?? []
+    }
+
+    private func addTabForPickedNote(noteId: String, title: String) {
+        guard let profileId = appState.activeProfile?.id else { return }
+        let noteType = (try? PersistenceManager.shared.fetchCachedNote(id: noteId, serverProfileId: profileId))?.noteType
+            ?? NoteType.text.rawValue
+        if let newId = try? PersistenceManager.shared.addOpenNoteTab(
+            noteId: noteId, title: title, noteType: noteType, serverProfileId: profileId
+        ),
+           let row = try? PersistenceManager.shared.fetchOpenNoteTab(id: newId, serverProfileId: profileId) {
+            onSelect(row)
+        }
+    }
+
+    /// Right-click menu, like Trilium's tab menu.
+    private func tabMenu(for tab: OpenNoteTab) -> UIMenu {
+        let index = tabs.firstIndex(where: { $0.id == tab.id }) ?? 0
+        let others = tabs.filter { $0.id != tab.id }
+        let toTheRight = Array(tabs.dropFirst(index + 1))
+        var closeGroup: [UIMenuElement] = [
+            UIAction(
+                title: String(localized: "Close Tab", comment: "Open-tab right-click menu"),
+                image: UIImage(systemName: "xmark")
+            ) { _ in DispatchQueue.main.async { removeTab(tab) } },
+        ]
+        if !others.isEmpty {
+            closeGroup.append(UIAction(
+                title: String(localized: "Close Other Tabs", comment: "Open-tab right-click menu")
+            ) { _ in DispatchQueue.main.async { removeTabs(others, keeping: tab) } })
+        }
+        if !toTheRight.isEmpty {
+            closeGroup.append(UIAction(
+                title: String(localized: "Close Tabs to the Right", comment: "Open-tab right-click menu")
+            ) { _ in DispatchQueue.main.async { removeTabs(toTheRight, keeping: tab) } })
+        }
+        let duplicate = UIAction(
+            title: String(localized: "Duplicate Tab", comment: "Open-tab right-click menu"),
+            image: UIImage(systemName: "plus.square.on.square")
+        ) { _ in DispatchQueue.main.async { addTabForPickedNote(noteId: tab.noteId, title: tab.title) } }
+        return UIMenu(children: [
+            UIMenu(options: .displayInline, children: [duplicate]),
+            UIMenu(options: .displayInline, children: closeGroup),
+        ])
+    }
+
+    /// Closes several tabs at once, then shows `kept` if the tab on screen was among them.
+    private func removeTabs(_ removing: [OpenNoteTab], keeping kept: OpenNoteTab) {
+        guard let profileId = appState.activeProfile?.id, !removing.isEmpty else { return }
+        let removedActive = removing.contains { $0.id == currentOpenTabId }
+        for tab in removing {
+            try? PersistenceManager.shared.removeOpenNoteTab(id: tab.id, serverProfileId: profileId)
+            OpenTabSessionStore.clearReadScrollState(for: tab.id)
+        }
+        reload()
+        if removedActive {
+            onSelect(kept)
+        }
+    }
+
+    private func removeTab(_ tab: OpenNoteTab) {
+        guard let profileId = appState.activeProfile?.id else { return }
+        let removed = tab
+        try? PersistenceManager.shared.removeOpenNoteTab(id: tab.id, serverProfileId: profileId)
+        onOpenTabRemoved?(removed)
+        reload()
+        if tabs.isEmpty { onTabsBecameEmpty?() }
+    }
+
+    /// Prevents the tab button from firing after a long-press reorder ends.
+    private func scheduleTabSelectionSuppressionReset() {
+        suppressTabSelection = true
+        tabSelectionSuppressionReset?.cancel()
+        let reset = DispatchWorkItem {
+            suppressTabSelection = false
+        }
+        tabSelectionSuppressionReset = reset
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: reset)
+    }
+
+    private func dropIndex(movingFrom source: Int, translation: CGFloat, tabWidths: [CGFloat]) -> Int {
+        guard tabs.indices.contains(source), tabWidths.count == tabs.count else { return source }
+        let draggedCenter = tabMinX(index: source, tabWidths: tabWidths) + tabWidths[source] / 2 + translation
+        var best = source
+        var bestDistance = CGFloat.greatestFiniteMagnitude
+        for index in tabs.indices {
+            let center = tabMinX(index: index, tabWidths: tabWidths) + tabWidths[index] / 2
+            let distance = abs(draggedCenter - center)
+            if distance < bestDistance {
+                bestDistance = distance
+                best = index
+            }
+        }
+        return best
+    }
+
+    private func tabMinX(index: Int, tabWidths: [CGFloat]) -> CGFloat {
+        var x = Self.horizontalPadding
+        for i in 0..<index {
+            x += tabWidths[i] + Self.tabGap
+        }
+        return x
+    }
+
+    private func applyTabReorder(from source: Int, to destination: Int) {
+        guard source != destination,
+              source >= 0, source < tabs.count,
+              destination >= 0, destination < tabs.count else { return }
+        var reordered = tabs
+        let item = reordered.remove(at: source)
+        reordered.insert(item, at: destination)
+        tabs = reordered
+        guard let profileId = appState.activeProfile?.id else { return }
+        try? PersistenceManager.shared.reorderOpenNoteTabs(
+            orderedIds: reordered.map(\.id),
+            serverProfileId: profileId
+        )
+    }
+
+    private func rowIconContext(for tab: OpenNoteTab) -> NoteRowIconContext {
+        if let profileId = appState.activeProfile?.id {
+            return PersistenceManager.shared.tabRowIconContext(
+                noteId: tab.noteId,
+                fallbackNoteType: tab.noteType,
+                serverProfileId: profileId
+            )
+        }
+        return NoteRowIconContext(
+            iconClass: nil,
+            fallbackNoteType: NoteType(rawValue: tab.noteType) ?? .text
+        )
+    }
+
+    private func displayTitle(for tab: OpenNoteTab) -> String {
+        guard let profileId = appState.activeProfile?.id else { return tab.title }
+        if let cached = try? PersistenceManager.shared.fetchCachedNote(id: tab.noteId, serverProfileId: profileId) {
+            let stored: String
+            if cached.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                stored = tab.title
+            } else {
+                stored = cached.title
+            }
+            return NoteItem.maskedStoredTitle(
+                stored,
+                isProtected: cached.isProtected,
+                protectedSessionActive: appState.protectedSessionActive
+            )
+        }
+        return tab.title
+    }
+}
+
+// MARK: - Horizontal scroll
+
+/// UIKit-backed horizontal scroller so tab gestures don't block pan-to-scroll.
+private struct NoteTabsHorizontalScrollView<Content: View>: UIViewRepresentable {
+    let contentWidth: CGFloat
+    let isScrollEnabled: Bool
+    let activeTabId: String?
+    let tabIds: [String]
+    let tabWidths: [CGFloat]
+    let tabGap: CGFloat
+    let horizontalPadding: CGFloat
+    let reorderHandleWidth: CGFloat
+    let reorderLongPressDuration: TimeInterval
+    let onReorderBegan: (Int) -> Void
+    let onReorderChanged: (CGFloat) -> Void
+    let onReorderEnded: (CGFloat) -> Void
+    let onReorderCancelled: () -> Void
+    /// Right-click menu for the tab at an index. Touch long-press stays reserved for reordering.
+    let menuForTab: (Int) -> UIMenu?
+    @ViewBuilder var content: () -> Content
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    func makeUIView(context: Context) -> UIScrollView {
+        let scrollView = UIScrollView()
+        scrollView.showsHorizontalScrollIndicator = false
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.alwaysBounceHorizontal = true
+        scrollView.alwaysBounceVertical = false
+        scrollView.delaysContentTouches = false
+        scrollView.canCancelContentTouches = true
+        scrollView.clipsToBounds = true
+        scrollView.backgroundColor = .clear
+        // The strip belongs to the bar, not the page content. Under the iOS 26+ floating tab bar, UIKit
+        // otherwise treats its lower edge as sitting under the tab bar: it insets it and draws the bottom
+        // scroll-edge effect across it, hiding the lower part of the tabs.
+        scrollView.contentInsetAdjustmentBehavior = .never
+        if #available(iOS 26.0, *) {
+            scrollView.topEdgeEffect.isHidden = true
+            scrollView.bottomEdgeEffect.isHidden = true
+        }
+
+        let hosting = UIHostingController(rootView: content())
+        hosting.safeAreaRegions = []
+        hosting.view.backgroundColor = .clear
+        hosting.view.translatesAutoresizingMaskIntoConstraints = false
+        hosting.view.isUserInteractionEnabled = true
+        scrollView.addSubview(hosting.view)
+
+        let widthConstraint = hosting.view.widthAnchor.constraint(equalToConstant: contentWidth)
+        NSLayoutConstraint.activate([
+            hosting.view.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
+            hosting.view.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
+            hosting.view.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            hosting.view.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
+            hosting.view.heightAnchor.constraint(equalTo: scrollView.frameLayoutGuide.heightAnchor),
+            widthConstraint,
+        ])
+
+        context.coordinator.hostingController = hosting
+        context.coordinator.widthConstraint = widthConstraint
+        context.coordinator.scrollView = scrollView
+        context.coordinator.installReorderGesture(on: scrollView)
+        scrollView.addInteraction(UIContextMenuInteraction(delegate: context.coordinator))
+        return scrollView
+    }
+
+    func updateUIView(_ scrollView: UIScrollView, context: Context) {
+        context.coordinator.hostingController?.rootView = content()
+        context.coordinator.widthConstraint?.constant = contentWidth
+        context.coordinator.tabCount = tabIds.count
+        context.coordinator.tabWidths = tabWidths
+        context.coordinator.tabGap = tabGap
+        context.coordinator.horizontalPadding = horizontalPadding
+        context.coordinator.reorderHandleWidth = reorderHandleWidth
+        context.coordinator.reorderLongPressRecognizer?.minimumPressDuration = reorderLongPressDuration
+        context.coordinator.onReorderBegan = onReorderBegan
+        context.coordinator.onReorderChanged = onReorderChanged
+        context.coordinator.onReorderEnded = onReorderEnded
+        context.coordinator.onReorderCancelled = onReorderCancelled
+        context.coordinator.menuForTab = menuForTab
+
+        if !context.coordinator.isReordering {
+            scrollView.isScrollEnabled = isScrollEnabled
+        }
+
+        let widthsSignature = tabWidths.map { String(format: "%.1f", $0) }.joined(separator: ",")
+        let scrollSignature = "\(activeTabId ?? "")|\(tabIds.joined(separator: ","))|\(widthsSignature)"
+        if scrollSignature != context.coordinator.lastScrollSignature {
+            context.coordinator.lastScrollSignature = scrollSignature
+            context.coordinator.scrollToActiveTab(
+                activeTabId: activeTabId,
+                tabIds: tabIds,
+                tabWidths: tabWidths,
+                tabGap: tabGap,
+                horizontalPadding: horizontalPadding
+            )
+        }
+    }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate, UIContextMenuInteractionDelegate {
+        var hostingController: UIHostingController<Content>?
+        var menuForTab: ((Int) -> UIMenu?)?
+        var widthConstraint: NSLayoutConstraint?
+        weak var scrollView: UIScrollView?
+        var lastScrollSignature = ""
+
+        var tabCount = 0
+        var tabWidths: [CGFloat] = []
+        var tabGap: CGFloat = 0
+        var horizontalPadding: CGFloat = 0
+        var reorderHandleWidth: CGFloat = 0
+        var reorderLongPressRecognizer: UILongPressGestureRecognizer?
+
+        var onReorderBegan: ((Int) -> Void)?
+        var onReorderChanged: ((CGFloat) -> Void)?
+        var onReorderEnded: ((CGFloat) -> Void)?
+        var onReorderCancelled: (() -> Void)?
+
+        private var reorderSourceIndex: Int?
+        private var reorderStartX: CGFloat = 0
+
+        var isReordering: Bool { reorderSourceIndex != nil }
+
+        func installReorderGesture(on scrollView: UIScrollView) {
+            let longPress = UILongPressGestureRecognizer(
+                target: self,
+                action: #selector(handleReorderLongPress(_:))
+            )
+            longPress.minimumPressDuration = 0.45
+            longPress.allowableMovement = 10
+            longPress.delegate = self
+            scrollView.addGestureRecognizer(longPress)
+            reorderLongPressRecognizer = longPress
+        }
+
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            guard gestureRecognizer === reorderLongPressRecognizer else { return true }
+            let contentX = contentX(for: gestureRecognizer)
+            return tabIndex(at: contentX) != nil
+        }
+
+        func gestureRecognizer(
+            _ gestureRecognizer: UIGestureRecognizer,
+            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+        ) -> Bool {
+            gestureRecognizer === reorderLongPressRecognizer
+        }
+
+        @objc private func handleReorderLongPress(_ recognizer: UILongPressGestureRecognizer) {
+            guard let scrollView else { return }
+            let contentX = contentX(for: recognizer)
+
+            switch recognizer.state {
+            case .began:
+                guard let index = tabIndex(at: contentX) else { return }
+                reorderSourceIndex = index
+                reorderStartX = contentX
+                scrollView.isScrollEnabled = false
+                TabReorderNavigationPopSuppressor.suppress(from: hostingController?.view ?? scrollView)
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                onReorderBegan?(index)
+            case .changed:
+                guard reorderSourceIndex != nil else { return }
+                onReorderChanged?(contentX - reorderStartX)
+            case .ended:
+                guard reorderSourceIndex != nil else { return }
+                onReorderEnded?(contentX - reorderStartX)
+                finishReorder()
+            case .cancelled, .failed:
+                guard reorderSourceIndex != nil else { return }
+                onReorderCancelled?()
+                finishReorder()
+            default:
+                break
+            }
+        }
+
+        /// Only a pointer's secondary click (compact menu) opens the tab menu; a touch long-press is the
+        /// reorder gesture.
+        func contextMenuInteraction(
+            _ interaction: UIContextMenuInteraction,
+            configurationForMenuAtLocation location: CGPoint
+        ) -> UIContextMenuConfiguration? {
+            guard interaction.menuAppearance == .compact, !isReordering, let scrollView else { return nil }
+            let contentView = hostingController?.view ?? scrollView
+            let x = interaction.view.map { contentView.convert(location, from: $0).x } ?? location.x
+            guard let index = tabIndex(at: x), let menu = menuForTab?(index) else { return nil }
+            return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in menu }
+        }
+
+        private func contentX(for recognizer: UIGestureRecognizer) -> CGFloat {
+            let contentView = hostingController?.view ?? scrollView
+            return recognizer.location(in: contentView).x
+        }
+
+        private func finishReorder() {
+            reorderSourceIndex = nil
+            reorderStartX = 0
+            if let scrollView {
+                scrollView.isScrollEnabled = true
+                TabReorderNavigationPopSuppressor.restore(from: hostingController?.view ?? scrollView)
+            }
+        }
+
+        private func tabIndex(at x: CGFloat) -> Int? {
+            guard x >= horizontalPadding, tabCount > 0, tabWidths.count == tabCount else { return nil }
+            var cursor = horizontalPadding
+            for index in 0..<tabCount {
+                let width = tabWidths[index]
+                if width > 0, x >= cursor, x < cursor + width {
+                    return index
+                }
+                cursor += width + tabGap
+            }
+            return nil
+        }
+
+        func scrollToActiveTab(
+            activeTabId: String?,
+            tabIds: [String],
+            tabWidths: [CGFloat],
+            tabGap: CGFloat,
+            horizontalPadding: CGFloat
+        ) {
+            guard let scrollView, let activeTabId, let index = tabIds.firstIndex(of: activeTabId),
+                  tabWidths.indices.contains(index) else { return }
+            scrollView.layoutIfNeeded()
+            var origin = horizontalPadding
+            for i in 0..<index {
+                origin += tabWidths[i] + tabGap
+            }
+            let tabCenter = origin + tabWidths[index] / 2
+            let targetX = max(0, tabCenter - scrollView.bounds.width / 2)
+            let maxX = max(0, scrollView.contentSize.width - scrollView.bounds.width)
+            UIView.animate(withDuration: 0.2) {
+                scrollView.contentOffset.x = min(targetX, maxX)
+            }
+        }
+    }
+}
+
+// MARK: - Cell
+
+private struct NoteTabCell: View {
+    let displayTitle: String
+    let iconClass: String?
+    let fallbackNoteType: NoteType
+    let isActive: Bool
+    let width: CGFloat
+    let reorderHandleWidth: CGFloat
+    let onTap: () -> Void
+    let onClose: () -> Void
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 0) {
+            Color.clear
+                .frame(width: reorderHandleWidth, height: NoteTabsBar.cellHeight)
+                .overlay {
+                    Image(systemName: "line.3.horizontal")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(.tertiary)
+                }
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+
+            Button(action: onTap) {
+                HStack(alignment: .center, spacing: 4) {
+                    NoteIconView(
+                        iconClass: iconClass,
+                        fallbackNoteType: fallbackNoteType,
+                        size: .compact,
+                        foregroundStyle: isActive ? Color.accentColor : Color.secondary
+                    )
+                    .frame(width: 16, alignment: .center)
+                    Text(displayTitle)
+                        .font(.footnote)
+                        .lineLimit(2)
+                        .truncationMode(.tail)
+                        .multilineTextAlignment(.leading)
+                        .foregroundStyle(isActive ? Color.accentColor : Color.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .minimumScaleFactor(0.82)
+                }
+                .padding(.leading, 2)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .hoverEffect(.highlight)
+
+            Button(action: onClose) {
+                Image(systemName: "xmark")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 22, height: 32)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .hoverEffect(.highlight)
+            .accessibilityLabel(String(localized: "Close tab", comment: "A11y: close open note tab"))
+        }
+        .frame(width: width, height: NoteTabsBar.cellHeight, alignment: .center)
+        .background(activeBackground, in: .capsule)
+    }
+
+    private var activeBackground: Color {
+        guard isActive else { return .clear }
+        return colorScheme == .dark ? Color.accentColor.opacity(0.28) : Color.accentColor.opacity(0.18)
+    }
+
+}

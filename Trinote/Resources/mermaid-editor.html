@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=10.0, user-scalable=yes">
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+        width: 100%; height: 100%;
+        overflow: hidden;
+        background: transparent;
+    }
+    #container {
+        width: 100%; height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    #diagram {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px;
+        width: 100%;
+        height: 100%;
+    }
+    #diagram svg {
+        display: block;
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+    #error {
+        color: #e55;
+        font-family: -apple-system, system-ui, sans-serif;
+        font-size: 13px;
+        padding: 12px 16px;
+        white-space: pre-wrap;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        background: rgba(0,0,0,0.06);
+        display: none;
+        z-index: 10;
+    }
+    @media (prefers-color-scheme: dark) {
+        #error { background: rgba(255,255,255,0.08); }
+    }
+    #loading {
+        font-family: -apple-system, system-ui, sans-serif;
+        color: #888;
+        font-size: 15px;
+        text-align: center;
+    }
+
+    /* See mermaid-viewer.html: Mermaid 11+ treemap/treeView text labels need an explicit
+       light/dark `fill` because the theme palette doesn't cover them yet. */
+    #diagram svg .treemapLabel,
+    #diagram svg .treemapTitle,
+    #diagram svg .treemapValue,
+    #diagram svg .treemapSectionLabel,
+    #diagram svg .treemapSectionValue,
+    #diagram svg .treemapSectionHeader,
+    #diagram svg .treeView-node-label,
+    #diagram svg g.tree-view text { fill: #1c1c1e !important; }
+    #diagram svg .treeView-node-line { stroke: #1c1c1e !important; }
+    @media (prefers-color-scheme: dark) {
+        #diagram svg .treemapLabel,
+        #diagram svg .treemapTitle,
+        #diagram svg .treemapValue,
+        #diagram svg .treemapSectionLabel,
+        #diagram svg .treemapSectionValue,
+        #diagram svg .treemapSectionHeader,
+        #diagram svg .treeView-node-label,
+        #diagram svg g.tree-view text { fill: #ffffff !important; }
+        #diagram svg .treeView-node-line { stroke: #ffffff !important; }
+        #diagram svg path.pieCircle[fill="#1f2020"],
+        #diagram svg path.pieCircle[fill="#1F2020"] { fill: #100A0A !important; }
+    }
+</style>
+</head>
+<body>
+<div id="container">
+    <div id="loading">Rendering diagram…</div>
+    <div id="diagram"></div>
+</div>
+<div id="error"></div>
+
+<script src="vendor/mermaid.min.js"></script>
+<script>
+const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+function trinoteMermaidThemeVariables(isDark) {
+    if (!isDark) return undefined;
+    return {
+        pie1: '#100A0A',
+        pie2: '#3D1931',
+        pie3: '#3C4548',
+        pie4: '#1A1214',
+        pie5: '#2A2428',
+        pie6: '#4A2038',
+        pie7: '#243038',
+        pie8: '#2C1818',
+        pie9: '#352030',
+        pie10: '#1C2428',
+        pie11: '#3A2830',
+        pie12: '#2C2C30',
+        pieStrokeColor: '#000000',
+        pieOuterStrokeColor: '#000000',
+        pieOpacity: '1'
+    };
+}
+function trinoteApplyMermaidTheme(isDark) {
+    mermaid.initialize({
+        startOnLoad: false,
+        // Mermaid 12 defaults to the ELK layout and the `neo` look; pin the pre-12 ones as Trilium
+        // v0.106 does, so stored diagrams keep their layout. Front matter still overrides either.
+        layout: 'dagre',
+        look: 'classic',
+        theme: isDark ? 'dark' : 'default',
+        securityLevel: 'strict',
+        fontFamily: '-apple-system, system-ui, sans-serif',
+        themeVariables: trinoteMermaidThemeVariables(isDark)
+    });
+}
+trinoteApplyMermaidTheme(isDark);
+
+let renderCounter = 0;
+let trinoteLastEditorSource = '';
+
+window.mermaidEditor = {
+    async render(source, isDarkOverride) {
+        const loadEl = document.getElementById('loading');
+        const diagEl = document.getElementById('diagram');
+        const errEl  = document.getElementById('error');
+        const thisRender = ++renderCounter;
+        trinoteLastEditorSource = typeof source === 'string' ? source : '';
+        if (typeof isDarkOverride === 'boolean') {
+            trinoteApplyMermaidTheme(isDarkOverride);
+        } else {
+            trinoteApplyMermaidTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
+        }
+
+        if (!source || !source.trim()) {
+            loadEl.style.display = '';
+            loadEl.textContent = 'Start typing a Mermaid diagram…';
+            diagEl.innerHTML = '';
+            errEl.style.display = 'none';
+            return;
+        }
+
+        try {
+            const id = 'mermaid-graph-' + thisRender;
+            const { svg } = await mermaid.render(id, source);
+            if (thisRender !== renderCounter) return;
+            loadEl.style.display = 'none';
+            diagEl.innerHTML = svg;
+            errEl.style.display = 'none';
+        } catch (e) {
+            if (thisRender !== renderCounter) return;
+            loadEl.style.display = 'none';
+            errEl.style.display = 'block';
+            errEl.textContent = e.message || String(e);
+        }
+    }
+};
+
+try {
+    const mql = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = function(e) {
+        try {
+            if (trinoteLastEditorSource) {
+                window.mermaidEditor.render(trinoteLastEditorSource, e.matches);
+            } else {
+                trinoteApplyMermaidTheme(e.matches);
+            }
+        } catch (err) {}
+    };
+    if (mql.addEventListener) mql.addEventListener('change', handler);
+    else if (mql.addListener) mql.addListener(handler);
+} catch (e) {}
+
+try {
+    window.webkit.messageHandlers.mermaidEditorReady.postMessage('ready');
+} catch(e) {}
+</script>
+</body>
+</html>

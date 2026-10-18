@@ -1,0 +1,36 @@
+.DS_Store
+.derivedData/
+local_notes
+**/*.xcodeproj
+**/*.xcworkspace
+*.xcodeproj
+*.xcworkspace
+**/*.xcuserdata
+**/*.xctestplan
+**/*.xctestrun
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+.env.test.local
+.env.test.production
+.env.test.development
+.env.test.local
+.env.test.production
+.env.test.development
+# Installed by npm from package-lock.json; not redistributed.
+Trinote/Resources/univer-editor-build/node_modules/
+
+# Kept locally, not part of the public source
+__pycache__/
+design/
+design-old/
+TrinoteTests/
+docs/*
+!docs/sso-setup.md
+!docs/trinote-sso-handoff.js
+Scripts/*
+!Scripts/sync_project_yml_version.sh
+package-lock.json
+!Trinote/Resources/*-build/package-lock.json

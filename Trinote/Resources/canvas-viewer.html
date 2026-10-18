@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes">
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; min-height: 100%; background: transparent; }
+    body { padding: 16px; }
+    #canvas-svg { text-align: center; }
+    #canvas-svg svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+    #status { font-family: -apple-system, system-ui; color: #888; font-size: 15px;
+              text-align: center; padding: 40px; }
+    @media (prefers-color-scheme: dark) {
+        #canvas-svg svg { filter: invert(0.88) hue-rotate(180deg); }
+    }
+</style>
+</head>
+<body>
+<div id="status">Rendering canvas...</div>
+<div id="canvas-svg" style="display:none;"></div>
+
+<script>
+  window.EXCALIDRAW_ASSET_PATH = new URL("canvas-editor-assets/dist/prod/", window.location.href).toString();
+</script>
+<script src="canvas-editor-assets/excalidraw-bundle.js"></script>
+<script>
+window.canvasViewer = {
+    async loadScene(jsonString) {
+        const statusEl = document.getElementById('status');
+        const svgEl = document.getElementById('canvas-svg');
+        try {
+            const data = JSON.parse(jsonString);
+            const elements = data.elements || [];
+            const files = {};
+
+            if (data.files) {
+                if (Array.isArray(data.files)) {
+                    data.files.forEach(f => { if (f && f.id) files[f.id] = f; });
+                } else {
+                    Object.assign(files, data.files);
+                }
+            }
+
+            const svg = await window.ExcalidrawUtils.exportToSvg({
+                elements: elements,
+                files: files,
+                appState: {
+                    exportWithDarkMode: window.matchMedia('(prefers-color-scheme: dark)').matches,
+                    viewBackgroundColor: 'transparent'
+                },
+                exportPadding: window.ExcalidrawUtils.previewPadding
+                    ? window.ExcalidrawUtils.previewPadding(elements)
+                    : 20
+            });
+
+            statusEl.style.display = 'none';
+            svgEl.style.display = 'block';
+            svgEl.appendChild(svg);
+
+            requestAnimationFrame(() => {
+                const h = document.body.scrollHeight;
+                window.webkit.messageHandlers.canvasRendered.postMessage(String(h || 400));
+            });
+        } catch (e) {
+            statusEl.textContent = 'Could not render canvas: ' + e.message;
+            console.error(e);
+        }
+    }
+};
+
+try {
+    window.webkit.messageHandlers.canvasReady.postMessage('ready');
+} catch(e) {}
+</script>
+</body>
+</html>

@@ -1,0 +1,756 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "NSCameraUsageDescription": {
+      "comment": "Info.plist permission prompt",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes benötigt Zugriff auf die Kamera, um Fotos für Notizen aufzunehmen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes needs camera access to capture photos for notes."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes a besoin d’accéder à l’appareil photo pour prendre des photos pour vos notes."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes heeft toegang tot de camera nodig om foto's voor notities te maken."
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes се нуждае от достъп до камерата, за да снима за бележките."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes potřebuje přístup k fotoaparátu, aby mohla pořizovat fotky do poznámek."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes skal have adgang til kameraet for at tage fotos til noter."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το Triquid Notes χρειάζεται πρόσβαση στην κάμερα για να τραβά φωτογραφίες για σημειώσεις."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes necesita acceder a la cámara para hacer fotos para las notas."
+          }
+        },
+        "et": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes vajab märkmete jaoks fotode tegemiseks juurdepääsu kaamerale."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes tarvitsee pääsyn kameraan, jotta voit ottaa kuvia muistiinpanoihin."
+          }
+        },
+        "ga": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teastaíonn rochtain ar an gceamara ó Triquid Notes chun grianghraif a ghabháil do nótaí."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes treba pristup kameri za snimanje fotografija za bilješke."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Triquid Notesnak hozzáférésre van szüksége a kamerához, hogy fotókat készíthessen a jegyzetekhez."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes ha bisogno di accedere alla fotocamera per scattare foto per le note."
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes reikia prieigos prie kameros, kad galėtų fotografuoti pastaboms."
+          }
+        },
+        "lv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes ir nepieciešama piekļuve kamerai, lai uzņemtu fotoattēlus piezīmēm."
+          }
+        },
+        "mt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes jeħtieġ aċċess għall-kamera biex jieħu ritratti għan-noti."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes potrzebuje dostępu do aparatu, aby robić zdjęcia do notatek."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Triquid Notes precisa de acesso à câmara para tirar fotografias para as notas."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes are nevoie de acces la cameră pentru a face poze pentru notițe."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes potrebuje prístup k fotoaparátu, aby mohla zachytávať fotky do poznámok."
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes potrebuje dostop do kamere za fotografiranje za beležke."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes behöver åtkomst till kameran för att ta bilder till anteckningar."
+          }
+        }
+      }
+    },
+    "NSFaceIDUsageDescription": {
+      "comment": "Info.plist permission prompt",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes verwendet Face ID, um die App zu entsperren."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes uses Face ID to unlock the app."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes utilise Face ID pour déverrouiller l’app."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes gebruikt Face ID om de app te ontgrendelen."
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes използва Face ID за отключване на приложението."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes používá Face ID k odemknutí aplikace."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes bruger Face ID til at låse appen op."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το Triquid Notes χρησιμοποιεί το Face ID για το ξεκλείδωμα της εφαρμογής."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes usa Face ID para desbloquear la app."
+          }
+        },
+        "et": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes kasutab rakenduse avamiseks Face ID-d."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes käyttää Face ID:tä sovelluksen lukituksen avaamiseen."
+          }
+        },
+        "ga": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Úsáideann Triquid Notes Face ID chun an aip a dhíghlasáil."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes upotrebljava Face ID za otključavanje aplikacije."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Triquid Notes a Face ID-t használja az alkalmazás feloldásához."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes usa Face ID per sbloccare l’app."
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes naudoja Face ID programai atrakinti."
+          }
+        },
+        "lv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes izmanto Face ID, lai atbloķētu lietotni."
+          }
+        },
+        "mt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes juża Face ID biex jiżblokka l-app."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes używa Face ID do odblokowywania aplikacji."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Triquid Notes usa o Face ID para desbloquear a app."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes folosește Face ID pentru a debloca aplicația."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes používa Face ID na odomknutie aplikácie."
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes uporablja Face ID za odklepanje aplikacije."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes använder Face ID för att låsa upp appen."
+          }
+        }
+      }
+    },
+    "NSLocalNetworkUsageDescription": {
+      "comment": "Info.plist permission prompt",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes verwendet das lokale Netzwerk, um deinen Trilium-Server in deinem Netzwerk zu erreichen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes uses the local network to reach your Trilium server on your network."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes utilise le réseau local pour atteindre votre serveur Trilium sur votre réseau."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes gebruikt het lokale netwerk om je Trilium-server in je netwerk te bereiken."
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes използва локалната мрежа, за да достигне сървъра ви Trilium във вашата мрежа."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes používá místní síť k připojení k vašemu serveru Trilium ve vaší síti."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes bruger det lokale netværk til at nå din Trilium-server på dit netværk."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το Triquid Notes χρησιμοποιεί το τοπικό δίκτυο για να φτάσει στον διακομιστή Trilium του δικτύου σας."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes usa la red local para acceder a tu servidor Trilium en tu red."
+          }
+        },
+        "et": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes kasutab kohtvõrku, et jõuda sinu võrgus oleva Triliumi serverini."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes käyttää paikallisverkkoa yhteyden muodostamiseen verkossasi olevaan Trilium-palvelimeen."
+          }
+        },
+        "ga": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Úsáideann Triquid Notes an líonra áitiúil chun teacht ar do fhreastalaí Trilium ar do líonra."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes upotrebljava lokalnu mrežu za pristup vašem poslužitelju Trilium u vašoj mreži."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Triquid Notes a helyi hálózatot használja a hálózatán lévő Trilium-szerver eléréséhez."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes usa la rete locale per raggiungere il tuo server Trilium sulla tua rete."
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes naudoja vietinį tinklą, kad pasiektų jūsų Trilium serverį jūsų tinkle."
+          }
+        },
+        "lv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes izmanto lokālo tīklu, lai sasniegtu jūsu Trilium serveri jūsu tīklā."
+          }
+        },
+        "mt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes juża n-netwerk lokali biex jilħaq is-server Trilium tiegħek fuq in-netwerk tiegħek."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes używa sieci lokalnej, aby łączyć się z serwerem Trilium w Twojej sieci."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Triquid Notes usa a rede local para aceder ao seu servidor Trilium na sua rede."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes folosește rețeaua locală pentru a accesa serverul Trilium din rețeaua dvs."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes používa lokálnu sieť na pripojenie k vášmu serveru Trilium vo vašej sieti."
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes uporablja lokalno omrežje za dostop do vašega strežnika Trilium v vašem omrežju."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes använder det lokala nätverket för att nå din Trilium-server i ditt nätverk."
+          }
+        }
+      }
+    },
+    "NSLocationWhenInUseUsageDescription": {
+      "comment": "Info.plist permission prompt",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes zeigt deinen Standort auf einer Karte, wenn du auf die Standorttaste tippst."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes shows where you are on a geo map when you tap its location button."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes affiche votre position sur une carte lorsque vous touchez son bouton de localisation."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes toont waar je bent op een geokaart als je op de locatieknop tikt."
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes показва къде се намирате на географска карта, когато докоснете бутона за местоположение."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes zobrazí vaši polohu na geografické mapě, když klepnete na tlačítko polohy."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes viser, hvor du er på et geokort, når du trykker på dets lokalitetsknap."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το Triquid Notes δείχνει πού βρίσκεστε σε γεωγραφικό χάρτη όταν αγγίζετε το κουμπί τοποθεσίας του."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes muestra dónde estás en un mapa geográfico cuando tocas su botón de ubicación."
+          }
+        },
+        "et": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes näitab geokaardil sinu asukohta, kui puudutad selle asukohanuppu."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes näyttää sijaintisi geokartalla, kun napautat sen sijaintipainiketta."
+          }
+        },
+        "ga": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taispeánann Triquid Notes cá bhfuil tú ar léarscáil gheo nuair a thapálann tú a cnaipe suímh."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes prikazuje gdje se nalazite na geokarti kad dodirnete njezinu tipku za lokaciju."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Triquid Notes a helymeghatározás gombra koppintva megmutatja a földrajzi térképen, hol tartózkodik."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes mostra dove ti trovi su una mappa geografica quando tocchi il pulsante della posizione."
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes parodo, kur esate geografiniame žemėlapyje, kai bakstelite jo vietos mygtuką."
+          }
+        },
+        "lv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes parāda, kur atrodaties ģeogrāfiskajā kartē, kad pieskaraties tās atrašanās vietas pogai."
+          }
+        },
+        "mt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes juri fejn int fuq mappa ġeografika meta tagħfas il-buttuna tal-post tagħha."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes pokazuje Twoje położenie na mapie geograficznej po stuknięciu przycisku lokalizacji."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Triquid Notes mostra onde está num mapa geográfico quando toca no respetivo botão de localização."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes arată unde vă aflați pe o hartă geografică atunci când apăsați butonul de localizare al acesteia."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes zobrazí vašu polohu na geografickej mape, keď klepnete na tlačidlo polohy."
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes prikaže, kje ste na geografskem zemljevidu, ko tapnete njegov gumb za lokacijo."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes visar var du är på en geokarta när du trycker på dess platsknapp."
+          }
+        }
+      }
+    },
+    "NSPhotoLibraryUsageDescription": {
+      "comment": "Info.plist permission prompt",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes benötigt Zugriff auf deine Fotos, um Bilder als Anhänge hochzuladen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes needs access to your photos to upload image attachments."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes a besoin d’accéder à vos photos pour importer des images en pièce jointe."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes heeft toegang tot je foto's nodig om afbeeldingen als bijlage te uploaden."
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes се нуждае от достъп до снимките ви, за да качва прикачени изображения."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes potřebuje přístup k vašim fotkám, aby mohla nahrávat obrázky jako přílohy."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes skal have adgang til dine fotos for at uploade billeder som bilag."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το Triquid Notes χρειάζεται πρόσβαση στις φωτογραφίες σας για να μεταφορτώνει εικόνες ως συνημμένα."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes necesita acceder a tus fotos para subir imágenes como adjuntos."
+          }
+        },
+        "et": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes vajab pildimanuste üleslaadimiseks juurdepääsu sinu fotodele."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes tarvitsee pääsyn kuviisi kuvaliitteiden lataamiseksi."
+          }
+        },
+        "ga": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teastaíonn rochtain ar do ghrianghraif ó Triquid Notes chun ceangaltáin íomhá a uaslódáil."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes treba pristup vašim fotografijama za prijenos slikovnih privitaka."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Triquid Notesnak hozzáférésre van szüksége a fotóihoz, hogy képmellékleteket tölthessen fel."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes ha bisogno di accedere alle foto per caricare immagini come allegati."
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes reikia prieigos prie jūsų nuotraukų, kad galėtų įkelti vaizdų priedus."
+          }
+        },
+        "lv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes ir nepieciešama piekļuve jūsu fotoattēliem, lai augšupielādētu attēlu pielikumus."
+          }
+        },
+        "mt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes jeħtieġ aċċess għar-ritratti tiegħek biex itella’ immaġni bħala fajls mehmuża."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes potrzebuje dostępu do zdjęć, aby przesyłać załączniki graficzne."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Triquid Notes precisa de acesso às suas fotografias para enviar imagens como anexos."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes are nevoie de acces la poze pentru a încărca imagini ca atașamente."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes potrebuje prístup k vašim fotkám, aby mohla nahrávať obrázky ako prílohy."
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes potrebuje dostop do vaših fotografij za nalaganje slik kot prilog."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triquid Notes behöver åtkomst till dina bilder för att ladda upp bilder som bilagor."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}
