@@ -50,7 +50,7 @@ settings:
     # Source of truth for XcodeGen. Identity Version/Build is applied on the next
     # build (Scripts/sync_project_yml_version.sh writes the values back here).
     MARKETING_VERSION: "1.2"
-    CURRENT_PROJECT_VERSION: "125"
+    CURRENT_PROJECT_VERSION: "126"
 
 packages:
   Highlightr:
@@ -116,6 +116,10 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.justinmeijer.nl.liquid-notes
+        # The app is "Triquid Notes.app" everywhere: the Mac shows the file name in Finder and Applications.
+        # The Swift module keeps the target's name, so the code still says `import Trinote`.
+        PRODUCT_NAME: Triquid Notes
+        PRODUCT_MODULE_NAME: Trinote
         # A Mac Catalyst app, scaled to match iPad: the iPad look, but a real Mac app with the menu
         # bar, several windows and Intel Macs, which the iPad app on Apple silicon could not offer.
         SUPPORTS_MACCATALYST: YES

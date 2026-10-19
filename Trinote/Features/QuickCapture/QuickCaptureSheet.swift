@@ -815,6 +815,13 @@ struct QuickCaptureSheet: View {
     /// Trilium's inbox for today when online (remembered for offline use), else the last one known,
     /// else the top level.
     private func resolveInbox(profileId: String) async -> CaptureDestination {
+        // The app-wide rule first: it reads the synced notes, so it also works offline and in a notebook on this
+        // device, where there is no server to ask (notes made there used to land at the top of the tree).
+        if let inbox = InboxNote.find(profileId: profileId) {
+            let destination = CaptureDestination(noteId: inbox.noteId, title: inbox.title)
+            CaptureDestinations.rememberInbox(destination, profileId: profileId)
+            return destination
+        }
         if appState.isOnline, let client = appState.client {
             let day = Date.now.formatted(Date.ISO8601FormatStyle(timeZone: .current).year().month().day())
             if let inbox = try? await CaptureDestinations.resolveInboxNote(client: client, profileId: profileId, day: day) {

@@ -266,6 +266,11 @@ struct FavoritesView: View {
     }
 
     private func open(_ entry: FixedEntry) {
+        // The inbox note is known from the synced notes, so it opens offline and in a notebook on this device too.
+        if entry == .inbox, let profileId = appState.activeProfile?.id, let inbox = InboxNote.find(profileId: profileId) {
+            stack.push(.note(NoteDestination(noteId: inbox.noteId, title: inbox.title)))
+            return
+        }
         guard appState.isOnline, let client = appState.client else {
             deleteError = String(localized: "Inbox and Today need a connection to the server.", comment: "Favorites: fixed entry while offline")
             return
