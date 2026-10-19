@@ -1410,6 +1410,9 @@ struct SettingsView: View {
         Section(String(localized: "App", comment: "Settings about section")) {
             LabeledContent(String(localized: "Version", comment: "App version label"), value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—")
             LabeledContent(String(localized: "Build", comment: "App build number"), value: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "—")
+            Link(destination: ReviewPrompt.writeReviewURL) {
+                Label(String(localized: "Rate Triquid Notes", comment: "Settings: opens the App Store review page"), systemImage: "star")
+            }
         }
     }
 

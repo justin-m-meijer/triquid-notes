@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// What the main window can do from the keyboard, published by `MainShellView`.
 struct MainWindowActions {
@@ -32,6 +33,14 @@ struct TrinoteCommands: Commands {
             Button(String(localized: "New Note", comment: "Menu command")) { window?.newNote() }
                 .keyboardShortcut("n", modifiers: .command)
                 .disabled(window == nil)
+            // Replacing the New group drops the window command SwiftUI would add, so it comes back
+            // here: another window on the Mac (and in Stage Manager on iPad), each with its own place.
+            if UIApplication.shared.supportsMultipleScenes {
+                Button(String(localized: "New Window", comment: "Menu command")) {
+                    UIApplication.shared.requestSceneSessionActivation(nil, userActivity: nil, options: nil)
+                }
+                .keyboardShortcut("n", modifiers: [.command, .option])
+            }
         }
 
         CommandMenu(String(localized: "Go", comment: "Menu: navigation")) {

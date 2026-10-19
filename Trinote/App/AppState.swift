@@ -1395,7 +1395,8 @@ final class AppState {
             activateLocalNotebook(existing)
             return
         }
-        let device = UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : (ProcessInfo.processInfo.isMacCatalystApp ? "Mac" : "iPhone")
+        // The Mac first: a Mac Catalyst app scaled to match iPad reports the iPad idiom too.
+        let device = ProcessInfo.processInfo.isMacCatalystApp ? "Mac" : (UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone")
         let profile = ServerProfile(
             name: String(localized: "On this \(device)", comment: "Local notebook name; argument is iPhone, iPad or Mac"),
             baseURL: ServerProfile.localBaseURL
@@ -1422,7 +1423,8 @@ final class AppState {
     /// Called just before signing a local notebook in to a server: its notes move into one folder
     /// that uploads first. Signing in then flushes the queue, which creates everything there.
     func prepareLocalNotebookTransfer(_ profile: ServerProfile) {
-        let device = UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : (ProcessInfo.processInfo.isMacCatalystApp ? "Mac" : "iPhone")
+        // The Mac first: a Mac Catalyst app scaled to match iPad reports the iPad idiom too.
+        let device = ProcessInfo.processInfo.isMacCatalystApp ? "Mac" : (UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone")
         let title = String(localized: "From my \(device)", comment: "Folder a local notebook uploads into; argument is iPhone, iPad or Mac")
         // Once per notebook: a retry after a failed sign-in reuses the folder made the first time.
         let key = "localTransferPrepared." + profile.id

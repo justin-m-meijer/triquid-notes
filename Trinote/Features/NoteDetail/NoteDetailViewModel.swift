@@ -1730,6 +1730,7 @@ final class NoteDetailViewModel {
             CheckboxPerf.log("save \(tag)upsertPendingUpload ms=\(CheckboxPerf.ms(tUpsert))")
             self.content = data
             saved = true
+            ReviewPrompt.recordSave()
         } catch {
             Log.api.error("Failed to save note body change locally: \(error)")
             CheckboxPerf.error("save \(tag)failed \(error.localizedDescription)")

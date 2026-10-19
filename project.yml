@@ -116,11 +116,12 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.justinmeijer.nl.liquid-notes
-        SUPPORTS_MACCATALYST: NO
+        # A Mac Catalyst app, scaled to match iPad: the iPad look, but a real Mac app with the menu
+        # bar, several windows and Intel Macs, which the iPad app on Apple silicon could not offer.
+        SUPPORTS_MACCATALYST: YES
         # One bundle ID on iPhone, iPad and Mac: one App Store record, universal purchase.
         DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: NO
-        # The iPad app on Apple silicon Macs (as TestFlight installs it); no separate Mac Catalyst app.
-        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
         # Mac Catalyst scaled to match iPad: the same Liquid Glass controls as on iPad; "Optimized
         # for Mac" swapped them for Mac pop-up menus and bezel buttons.
         TARGETED_DEVICE_FAMILY: "1,2"
@@ -128,6 +129,8 @@ targets:
         GENERATE_INFOPLIST_FILE: false
         ENABLE_USER_SCRIPT_SANDBOXING: false
         CODE_SIGN_ENTITLEMENTS: Trinote/Trinote.entitlements
+        # The Mac App Store requires the App Sandbox; the Mac entitlements add it.
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": Trinote/Trinote-macOS.entitlements
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: "Apple Development"
 
@@ -149,17 +152,19 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.justinmeijer.nl.liquid-notes.fileshare
-        SUPPORTS_MACCATALYST: NO
+        # A Mac Catalyst app, scaled to match iPad: the iPad look, but a real Mac app with the menu
+        # bar, several windows and Intel Macs, which the iPad app on Apple silicon could not offer.
+        SUPPORTS_MACCATALYST: YES
         # One bundle ID on iPhone, iPad and Mac: one App Store record, universal purchase.
         DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: NO
-        # The iPad app on Apple silicon Macs (as TestFlight installs it); no separate Mac Catalyst app.
-        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
         TARGETED_DEVICE_FAMILY: "1,2"
         PRODUCT_NAME: TrinoteShare
         INFOPLIST_FILE: TrinoteShare/Info.plist
         GENERATE_INFOPLIST_FILE: false
         ENABLE_USER_SCRIPT_SANDBOXING: false
         CODE_SIGN_ENTITLEMENTS: TrinoteShare/TrinoteShare.entitlements
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": TrinoteShare/TrinoteShare-macOS.entitlements
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: "Apple Development"
         SKIP_INSTALL: YES

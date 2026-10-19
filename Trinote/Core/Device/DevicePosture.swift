@@ -170,6 +170,8 @@ final class HingeObserverView: UIView {
 
     private func installHingeInteractionIfNeeded() {
         guard hingeInteraction == nil else { return }
+        // A Mac has no hinge, and Mac Catalyst has no hinge API: the posture stays unknown, as on iPad.
+        #if !targetEnvironment(macCatalyst)
         if #available(iOS 27.1, *) {
             let interaction = UIHingeInteraction { [weak self] _, update in
                 guard let self else { return }
@@ -191,6 +193,7 @@ final class HingeObserverView: UIView {
             addInteraction(interaction)
             hingeInteraction = interaction
         }
+        #endif
     }
 
     private func report() {
@@ -212,9 +215,13 @@ final class HingeObserverView: UIView {
     }
 
     private func divisionRegionInWindow(_ window: UIWindow) -> CGRect? {
+        #if targetEnvironment(macCatalyst)
+        return nil
+        #else
         guard #available(iOS 27.1, *) else { return nil }
         let regions = window.reservedRegions(kind: .division).filter(\.isActive)
         return regions.first?.frame
+        #endif
     }
 }
 

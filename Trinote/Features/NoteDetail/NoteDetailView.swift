@@ -1502,6 +1502,7 @@ struct NoteDetailView: View {
                 persistReadScrollFractionForActiveOpenTab()
                 viewModel?.persistEditingDraftIfNeeded()
                 if let vm = viewModel { autosaveNow(vm: vm) }
+                ReviewPrompt.noteClosed()
             }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .background || phase == .inactive {
