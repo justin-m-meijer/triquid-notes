@@ -21,6 +21,8 @@ struct NoteListView: View {
     @AppStorage(AppAccent.storageKey) private var appAccent: String = ""
     @AppStorage("colorTheme") private var colorTheme: String = ColorTheme.default.rawValue
     @State private var content = NoteListContent()
+    /// The source, order and server `content` was last loaded for.
+    @State private var loadedKey: String?
     @State private var isLoading = true
     @State private var inboxError: String?
     @State private var filter = ""
@@ -403,11 +405,22 @@ struct NoteListView: View {
                 await model.loadTree()
             }
         }
-        if let loaded = try? await loader.load(source, profileId: profileId, order: order, inboxNoteId: inboxId, favoriteIds: favorites, recentIds: recents),
-           loaded != content {
-            content = loaded
-        }
+        // A list opened afresh shows its top rows with previews first; a long notebook's other previews follow.
+        // A refresh of the list on screen loads everything at once, so its previews don't blink.
+        let key = "\(source)-\(order.rawValue)-\(profileId)"
+        let previewLimit = key == loadedKey ? Int.max : Self.firstPreviews
+        guard let loaded = try? await loader.load(source, profileId: profileId, order: order, inboxNoteId: inboxId, favoriteIds: favorites, recentIds: recents, previewLimit: previewLimit) else { return }
+        if loaded != content { content = loaded }
+        loadedKey = key
+        guard loaded.previewsPending,
+              let full = try? await loader.load(source, profileId: profileId, order: order, inboxNoteId: inboxId, favoriteIds: favorites, recentIds: recents),
+              !Task.isCancelled, full != content
+        else { return }
+        content = full
     }
+
+    /// Rows a list opened afresh shows with previews before the rest: more than a screenful.
+    private static let firstPreviews = 60
 
     private func newNote() async {
         guard let notebookId else {

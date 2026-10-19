@@ -415,7 +415,7 @@ struct WelcomeView: View {
         }
     }
 
-    /// Notes with open to-dos, read off the main thread like the Todo list (bodies are scanned).
+    /// Notes with open to-dos, read off the main thread like the Todo list.
     private func loadTodos() async {
         guard let profileId = appState.activeProfile?.id else {
             todos = []
@@ -423,9 +423,9 @@ struct WelcomeView: View {
             return
         }
         let loader = await NoteListLoader.background(PersistenceManager.shared.container)
-        guard let content = try? await loader.load(.todo, profileId: profileId, order: .edited, inboxNoteId: nil, favoriteIds: [], recentIds: []) else { return }
-        todoTotal = content.rows.count
-        todos = content.rows.prefix(Self.todoLimit).compactMap {
+        guard let summary = try? await loader.todoSummary(profileId: profileId, limit: Self.todoLimit) else { return }
+        todoTotal = summary.total
+        todos = summary.rows.compactMap {
             makeCard(noteId: $0.noteId, storedTitle: $0.title, noteType: $0.noteType, accessedAt: $0.modified,
                      profileId: profileId, dropWhenUncached: false)
         }

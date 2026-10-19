@@ -35,6 +35,10 @@ final class CachedNote {
     var contentSkippedBlobId: String?
     /// Size of `content` in bytes, so the cache size can be summed without reading every body.
     var contentByteCount: Int?
+    /// Whether this text note's cached body has a checkbox still open, so the Todo list and its count are a query
+    /// instead of a scan of every body. Set with the body (`CacheStore.storeBody`); nil until worked out (rows cached
+    /// before this column, or whose type changed), which `NoteListLoader` fills in on its next Todo read.
+    var hasOpenTodo: Bool?
 
     init(
         noteId: String,
@@ -64,6 +68,7 @@ final class CachedNote {
         self.childBranchIds = childBranchIds
         self.content = content
         self.contentByteCount = content?.count
+        self.hasOpenTodo = Self.hasOpenTodo(noteType: noteType, content: content)
         self.contentFetchedAt = contentFetchedAt
         self.metadataFetchedAt = metadataFetchedAt
         self.utcDateModified = utcDateModified
@@ -73,6 +78,14 @@ final class CachedNote {
 
     var parsedType: NoteType? {
         NoteType(rawValue: noteType)
+    }
+
+    /// The `hasOpenTodo` value for a body: only text notes have checkboxes.
+    static func hasOpenTodo(noteType: String, content: Data?) -> Bool {
+        guard noteType == NoteType.text.rawValue, let content, let html = String(data: content, encoding: .utf8),
+              html.contains("checkbox")
+        else { return false }
+        return NoteListLoader.hasOpenCheckbox(html)
     }
 }
 

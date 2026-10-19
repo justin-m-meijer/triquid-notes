@@ -97,7 +97,8 @@ struct SidebarView: View {
                 .padding(.horizontal, 8)
                 savedSearchesSection
                 notebooksHeader
-                VStack(spacing: 1) {
+                // Lazy, like the note lists: an open notebook can hold thousands of notes.
+                LazyVStack(spacing: 1) {
                     ForEach(sorted(notebooks)) { notebook in
                         notebookRows(notebook, depth: 0, siblings: notebooks, parentNoteId: TriliumTreeConstants.rootNoteId)
                     }
@@ -680,7 +681,7 @@ struct SidebarView: View {
         let isExpanded = expanded.contains(notebook.noteId)
         let isOpen = noteStack.currentNote?.noteId == notebook.noteId
         let tint = useTriliumNoteColors ? TriliumNoteColorMapper.swiftUIColor(for: notebook.color) : nil
-        return AnyView(VStack(spacing: 1) {
+        return AnyView(LazyVStack(spacing: 1) {
             row(
                 title: notebook.title,
                 icon: {
@@ -874,7 +875,7 @@ struct SidebarView: View {
         let loader = await NoteListLoader.background(persistence.container)
         let inboxId = InboxNote.find(profileId: profileId, persistence: persistence)?.noteId
         let favoriteCount = (try? persistence.fetchFavorites(serverProfileId: profileId).count) ?? 0
-        // The tree first: the counts look into every note's body for open to-dos and come after.
+        // The tree first, then the counts.
         notebooks = (try? await loader.notebookTree(profileId: profileId)) ?? []
         readTriliumSort(profileId: profileId)
         counts = (try? await loader.counts(profileId: profileId, inboxNoteId: inboxId, favoriteCount: favoriteCount)) ?? SidebarCounts()

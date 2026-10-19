@@ -570,7 +570,6 @@ enum SearchQueryHighlight {
         let mutable = NSMutableAttributedString(string: text)
         let nsText = text as NSString
         let len = nsText.length
-        let bg = UIColor.systemYellow.withAlphaComponent(0.38)
         for term in terms {
             let trimmed = term.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else { continue }
@@ -578,7 +577,7 @@ enum SearchQueryHighlight {
             while loc < len {
                 let r = nsText.range(of: trimmed, options: options, range: NSRange(location: loc, length: len - loc))
                 if r.location == NSNotFound { break }
-                mutable.addAttribute(.backgroundColor, value: bg, range: r)
+                mutable.addAttributes(SearchHighlightStyle.exact, range: r)
                 loc = r.location + max(r.length, 1)
             }
         }

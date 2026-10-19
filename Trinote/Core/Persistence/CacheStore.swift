@@ -30,6 +30,7 @@ struct CacheStore {
         let existing = try fetchCachedNote(id: response.noteId, serverProfileId: serverProfileId)
         if let existing {
             existing.title = response.title
+            if existing.noteType != response.type { existing.hasOpenTodo = nil }
             existing.noteType = response.type
             existing.mime = response.mime
             existing.isProtected = response.isProtected
@@ -82,6 +83,7 @@ struct CacheStore {
     static func storeBody(_ content: Data, in note: CachedNote, utcDateModified: String?, contentBlobId: String?) {
         note.content = content
         note.contentByteCount = content.count
+        note.hasOpenTodo = CachedNote.hasOpenTodo(noteType: note.noteType, content: content)
         note.contentFetchedAt = .now
         if let date = utcDateModified {
             note.utcDateModified = date
@@ -212,6 +214,7 @@ struct CacheStore {
             }
         }
         set(\.title, response.title)
+        if existing.noteType != response.type { existing.hasOpenTodo = nil }
         set(\.noteType, response.type)
         set(\.mime, response.mime)
         set(\.isProtected, response.isProtected)
@@ -874,6 +877,7 @@ struct CacheStore {
         for row in rows {
             row.content = nil
             row.contentByteCount = nil
+            row.hasOpenTodo = false
             row.contentFetchedAt = nil
             row.contentBlobId = nil
             row.contentSkippedBlobId = nil

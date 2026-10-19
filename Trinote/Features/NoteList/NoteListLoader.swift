@@ -57,9 +57,9 @@ struct NoteListRowData: Identifiable, Hashable, Sendable {
     let color: String?
     let isProtected: Bool
     /// The first lines of the body, as plain text.
-    let preview: String
+    var preview: String
     /// The first cached image in the body.
-    let thumbnail: Data?
+    var thumbnail: Data?
     /// A file note's kind ("PDF"), shown as a small tile.
     let fileBadge: String?
     let modified: Date?
@@ -83,6 +83,8 @@ struct NoteListContent: Sendable, Equatable {
     var rows: [NoteListRowData] = []
     /// Set when a smart folder has nothing to point at (no `#inbox` note).
     var missingSourceHint: String?
+    /// Rows past the `previewLimit` of `NoteListLoader.load` have no preview or thumbnail yet.
+    var previewsPending = false
     /// The Inbox smart folder has no inbox note to show; the empty state offers to create one.
     var missingInbox = false
 }
@@ -117,7 +119,10 @@ actor NoteListLoader {
         }
     }
 
-    func load(_ source: NoteListSource, profileId: String, order: NoteListOrder, inboxNoteId: String?, favoriteIds: [String], recentIds: [String]) throws -> NoteListContent {
+    /// - Parameter previewLimit: How many rows (in list order) get their preview and thumbnail; reading and
+    ///   converting bodies is most of the work for a long notebook, so a list first shows its top rows with
+    ///   previews (`previewsPending`), then loads again without a limit.
+    func load(_ source: NoteListSource, profileId: String, order: NoteListOrder, inboxNoteId: String?, favoriteIds: [String], recentIds: [String], previewLimit: Int = .max) throws -> NoteListContent {
         var content = NoteListContent()
         let notes: [CachedNote]
         switch source {
@@ -136,16 +141,16 @@ actor NoteListLoader {
                 )
             }
             let leaves = children.filter { $0.note.childBranchIds.isEmpty }
-            content.rows = try rows(for: leaves.map(\.note), positions: Dictionary(leaves.map { ($0.note.noteId, $0.position) }, uniquingKeysWith: { a, _ in a }), profileId: profileId)
-            content.rows = Self.sorted(content.rows, by: order)
+            content.rows = try rows(for: leaves.map(\.note), positions: Dictionary(leaves.map { ($0.note.noteId, $0.position) }, uniquingKeysWith: { a, _ in a }), order: order, previewLimit: previewLimit, profileId: profileId)
+            content.previewsPending = content.rows.count > previewLimit
             return content
         case .allNotes:
-            notes = try allNotes(profileId: profileId)
+            notes = try recentlyEdited(profileId: profileId, limit: Self.smartFolderLimit)
         case .today:
             let startOfDay = Calendar.current.startOfDay(for: .now)
-            notes = try allNotes(profileId: profileId).filter { (Self.date($0.utcDateModified) ?? .distantPast) >= startOfDay }
+            notes = try recentlyEdited(profileId: profileId, since: startOfDay, limit: Self.smartFolderLimit)
         case .todo:
-            notes = try todoNotes(profileId: profileId)
+            notes = try todoNotes(profileId: profileId, limit: Self.smartFolderLimit)
         case .inbox:
             guard let inboxNoteId else {
                 content.missingSourceHint = String(localized: "Quick notes and things you share to the app collect in an inbox. Create one, or label a note #inbox in Trilium.", comment: "Inbox smart folder without an inbox note")
@@ -159,21 +164,28 @@ actor NoteListLoader {
             notes = try fetchNotes(ids: recentIds, profileId: profileId)
         }
         let limited = Array(notes.prefix(Self.smartFolderLimit))
-        content.rows = try rows(for: limited, positions: [:], profileId: profileId)
         // Recents keep the order they were opened in.
-        content.rows = source == .recents ? content.rows : Self.sorted(content.rows, by: order == .manual ? .edited : order)
+        content.rows = try rows(for: limited, positions: [:], order: source == .recents ? nil : (order == .manual ? .edited : order), previewLimit: previewLimit, profileId: profileId)
+        content.previewsPending = content.rows.count > previewLimit
         return content
     }
 
     func counts(profileId: String, inboxNoteId: String?, favoriteCount: Int) throws -> SidebarCounts {
         var counts = SidebarCounts()
-        counts.allNotes = try allNotes(profileId: profileId).count
+        counts.allNotes = try modelContext.fetchCount(FetchDescriptor<CachedNote>(predicate: Self.userNotes(profileId)))
         if let inboxNoteId {
             counts.inbox = try children(of: inboxNoteId, profileId: profileId).count
         }
-        counts.todo = try todoNotes(profileId: profileId).count
+        counts.todo = try todoNoteIds(profileId: profileId).count
         counts.favorites = favoriteCount
         return counts
+    }
+
+    /// The Welcome screen's to-do card: how many notes have open to-dos, and the most recently edited `limit`.
+    func todoSummary(profileId: String, limit: Int) throws -> (total: Int, rows: [NoteListRowData]) {
+        let ids = try todoNoteIds(profileId: profileId)
+        let notes = try todoNotes(profileId: profileId, limit: limit)
+        return (ids.count, try rows(for: notes, positions: [:], order: nil, previewLimit: limit, profileId: profileId))
     }
 
     /// The notebooks (top-level notes) and all their sub-notes, for the sidebar tree: every item is a
@@ -185,7 +197,11 @@ actor NoteListLoader {
             sortBy: [SortDescriptor(\.notePosition)]
         ))
         let childrenByParent = Dictionary(grouping: branches, by: \.parentNoteId)
-        let notes = try notesById(Set(branches.map(\.noteId)), profileId: profileId)
+        // The whole tree: one read of the profile's notes beats looking up every branch's note by id.
+        let notes = Dictionary(
+            try modelContext.fetch(FetchDescriptor<CachedNote>(predicate: #Predicate { $0.serverProfileId == profileId })).map { ($0.noteId, $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
         let icons = try labelValues("iconClass", noteIds: Set(notes.keys), profileId: profileId)
         let colors = try labelValues("color", noteIds: Set(notes.keys), profileId: profileId)
 
@@ -233,9 +249,14 @@ actor NoteListLoader {
 
     private func notesById(_ ids: Set<String>, profileId: String) throws -> [String: CachedNote] {
         guard !ids.isEmpty else { return [:] }
-        let notes = try modelContext.fetch(FetchDescriptor<CachedNote>(
-            predicate: #Predicate { $0.serverProfileId == profileId && ids.contains($0.noteId) }
-        ))
+        // A chunk of ids per query, as `CacheStore.fetchCachedNotes`: one `IN` list of thousands (a large notebook)
+        // is slow.
+        var notes: [CachedNote] = []
+        for chunk in Array(ids).chunked(into: CacheStore.idQueryChunkSize) {
+            notes += try modelContext.fetch(FetchDescriptor<CachedNote>(
+                predicate: #Predicate { $0.serverProfileId == profileId && chunk.contains($0.noteId) }
+            ))
+        }
         return Dictionary(notes.map { ($0.noteId, $0) }, uniquingKeysWith: { first, _ in first })
     }
 
@@ -245,31 +266,108 @@ actor NoteListLoader {
     }
 
     /// Every note a person wrote: Trilium's own (`_…`) and the root are left out.
-    private func allNotes(profileId: String) throws -> [CachedNote] {
-        try modelContext.fetch(FetchDescriptor<CachedNote>(predicate: #Predicate { $0.serverProfileId == profileId }))
-            .filter { !$0.noteId.hasPrefix("_") && $0.noteId != "root" }
-            .sorted { (Self.date($0.utcDateModified) ?? .distantPast) > (Self.date($1.utcDateModified) ?? .distantPast) }
+    private static func userNotes(_ profileId: String) -> Predicate<CachedNote> {
+        #Predicate { $0.serverProfileId == profileId && $0.noteId != "root" && !$0.noteId.starts(with: "_") }
     }
 
-    /// `#todo`, or a text note with a checkbox still open. Protected bodies are not looked into.
-    private func todoNotes(profileId: String) throws -> [CachedNote] {
-        let labelled = Set(try modelContext.fetch(FetchDescriptor<CachedAttribute>(
-            predicate: #Predicate { $0.serverProfileId == profileId && $0.type == "label" && $0.name == "todo" }
-        )).map(\.noteId))
-        return try allNotes(profileId: profileId).filter { note in
-            if labelled.contains(note.noteId) { return true }
-            guard note.noteType == "text", !note.isProtected, let data = note.content,
-                  let html = String(data: data, encoding: .utf8), html.contains("checkbox")
-            else { return false }
-            return Self.hasOpenCheckbox(html)
+    /// The `limit` most recently edited notes (edited `since` a date, when given), newest first. The store sorts
+    /// and limits on `utcDateModified` (indexed; Trilium's UTC dates sort as text); the dates are then compared
+    /// parsed, as the list shows them.
+    private func recentlyEdited(profileId: String, since: Date? = nil, limit: Int) throws -> [CachedNote] {
+        var descriptor = FetchDescriptor<CachedNote>(
+            predicate: Self.userNotes(profileId),
+            sortBy: [SortDescriptor(\.utcDateModified, order: .reverse)]
+        )
+        if let since {
+            // Notes edited on or after that UTC day; the exact moment is checked below.
+            let day = Self.utcDayFormatter.string(from: since)
+            descriptor.predicate = #Predicate {
+                $0.serverProfileId == profileId && $0.noteId != "root" && !$0.noteId.starts(with: "_")
+                    && $0.utcDateModified != nil && $0.utcDateModified! >= day
+            }
+        } else {
+            descriptor.fetchLimit = limit
         }
+        var notes = try modelContext.fetch(descriptor)
+        if let since {
+            notes = notes.filter { (Self.date($0.utcDateModified) ?? .distantPast) >= since }
+        }
+        return Array(Self.newestFirst(notes).prefix(limit))
+    }
+
+    private static let utcDayFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
+
+    nonisolated private static func newestFirst(_ notes: [CachedNote]) -> [CachedNote] {
+        notes.map { ($0, date($0.utcDateModified) ?? .distantPast) }.sorted { $0.1 > $1.1 }.map(\.0)
+    }
+
+    /// `#todo`, or a text note with a checkbox still open (`CachedNote.hasOpenTodo`). Protected bodies are not
+    /// looked into.
+    private func todoNoteIds(profileId: String) throws -> Set<String> {
+        try fillMissingTodoFlags(profileId: profileId)
+        var flagged = FetchDescriptor<CachedNote>(predicate: #Predicate {
+            $0.serverProfileId == profileId && $0.hasOpenTodo == true && $0.noteType == "text" && !$0.isProtected
+                && $0.noteId != "root" && !$0.noteId.starts(with: "_")
+        })
+        flagged.propertiesToFetch = [\.noteId]
+        var ids = Set(try modelContext.fetch(flagged).map(\.noteId))
+        let labelled = try todoLabelledNoteIds(profileId: profileId).filter { !ids.contains($0) }
+        ids.formUnion(try notesById(labelled, profileId: profileId).keys.filter { !$0.hasPrefix("_") && $0 != "root" })
+        return ids
+    }
+
+    private func todoNotes(profileId: String, limit: Int) throws -> [CachedNote] {
+        try fillMissingTodoFlags(profileId: profileId)
+        let flagged = try modelContext.fetch(FetchDescriptor<CachedNote>(
+            predicate: #Predicate {
+                $0.serverProfileId == profileId && $0.hasOpenTodo == true && $0.noteType == "text" && !$0.isProtected
+                    && $0.noteId != "root" && !$0.noteId.starts(with: "_")
+            }
+        ))
+        let flaggedIds = Set(flagged.map(\.noteId))
+        let labelled = try notesById(try todoLabelledNoteIds(profileId: profileId).filter { !flaggedIds.contains($0) }, profileId: profileId)
+            .values.filter { !$0.noteId.hasPrefix("_") && $0.noteId != "root" }
+        return Array(Self.newestFirst(flagged + labelled).prefix(limit))
+    }
+
+    private func todoLabelledNoteIds(profileId: String) throws -> Set<String> {
+        var descriptor = FetchDescriptor<CachedAttribute>(
+            predicate: #Predicate { $0.serverProfileId == profileId && $0.type == "label" && $0.name == "todo" }
+        )
+        descriptor.propertiesToFetch = [\.noteId]
+        return Set(try modelContext.fetch(descriptor).map(\.noteId))
+    }
+
+    /// Works out `hasOpenTodo` for rows that don't have it yet: once for a cache from before the column, then only
+    /// for notes whose type changed.
+    private func fillMissingTodoFlags(profileId: String) throws {
+        let missing = try modelContext.fetch(FetchDescriptor<CachedNote>(
+            predicate: #Predicate { $0.serverProfileId == profileId && $0.hasOpenTodo == nil }
+        ))
+        guard !missing.isEmpty else { return }
+        for note in missing {
+            note.hasOpenTodo = CachedNote.hasOpenTodo(noteType: note.noteType, content: note.content)
+        }
+        try modelContext.save()
     }
 
     private func labelValues(_ name: String, noteIds: Set<String>, profileId: String) throws -> [String: String] {
         guard !noteIds.isEmpty else { return [:] }
-        let attributes = try modelContext.fetch(FetchDescriptor<CachedAttribute>(
-            predicate: #Predicate { $0.serverProfileId == profileId && $0.type == "label" && $0.name == name }
-        ))
+        // A notebook's or list's notes are looked up by id; the whole sidebar tree reads every label of that name.
+        let ids = Array(noteIds)
+        let attributes = try ids.count <= 500
+            ? modelContext.fetch(FetchDescriptor<CachedAttribute>(
+                predicate: #Predicate { $0.serverProfileId == profileId && $0.type == "label" && $0.name == name && ids.contains($0.noteId) }
+            ))
+            : modelContext.fetch(FetchDescriptor<CachedAttribute>(
+                predicate: #Predicate { $0.serverProfileId == profileId && $0.type == "label" && $0.name == name }
+            ))
         var result: [String: String] = [:]
         for attribute in attributes where noteIds.contains(attribute.noteId) {
             result[attribute.noteId] = attribute.value
@@ -279,12 +377,12 @@ actor NoteListLoader {
 
     // MARK: - Rows
 
-    private func rows(for notes: [CachedNote], positions: [String: Int], profileId: String) throws -> [NoteListRowData] {
+    /// Rows in `order` (as given when nil), with previews and thumbnails for the first `previewLimit`.
+    private func rows(for notes: [CachedNote], positions: [String: Int], order: NoteListOrder?, previewLimit: Int, profileId: String) throws -> [NoteListRowData] {
         let iconClasses = try labelValues("iconClass", noteIds: Set(notes.map(\.noteId)), profileId: profileId)
         let colors = try labelValues("color", noteIds: Set(notes.map(\.noteId)), profileId: profileId)
-        return notes.map { note in
-            let html = note.content.flatMap { String(data: $0, encoding: .utf8) }
-            return NoteListRowData(
+        var rows = notes.map { note in
+            NoteListRowData(
                 noteId: note.noteId,
                 title: note.title,
                 noteType: note.noteType,
@@ -292,13 +390,23 @@ actor NoteListLoader {
                 iconClass: iconClasses[note.noteId],
                 color: colors[note.noteId],
                 isProtected: note.isProtected,
-                preview: note.isProtected ? "" : Self.preview(noteType: note.noteType, body: html),
-                thumbnail: note.isProtected ? nil : html.flatMap { thumbnail(in: $0, profileId: profileId) },
+                preview: "",
+                thumbnail: nil,
                 fileBadge: Self.fileBadge(noteType: note.noteType, mime: note.mime),
                 modified: Self.date(note.utcDateModified),
                 position: positions[note.noteId] ?? 0
             )
         }
+        if let order { rows = Self.sorted(rows, by: order) }
+        let byId = Dictionary(notes.map { ($0.noteId, $0) }, uniquingKeysWith: { first, _ in first })
+        for index in rows.indices.prefix(previewLimit) {
+            guard let note = byId[rows[index].noteId], !note.isProtected,
+                  let html = note.content.flatMap({ String(data: $0, encoding: .utf8) })
+            else { continue }
+            rows[index].preview = Self.preview(noteType: note.noteType, body: html)
+            rows[index].thumbnail = thumbnail(in: html, profileId: profileId)
+        }
+        return rows
     }
 
     private func thumbnail(in html: String, profileId: String) -> Data? {
@@ -325,15 +433,40 @@ actor NoteListLoader {
 
     nonisolated static func preview(noteType: String, body: String?) -> String {
         guard let body, !body.isEmpty else { return "" }
-        let text: String
         switch noteType {
-        case "text": text = NotePlainText.fromHTML(body)
-        case "code", "markdown": text = body
-        default: return ""
+        case "text":
+            // A row shows the first lines only, so a long body is read up to a tag boundary near its start; its
+            // text there is the start of the whole body's text. The whole body is read when that start holds too
+            // little text, or opens a style, script or comment block the cut could leave unclosed.
+            if let head = htmlHead(body) {
+                let text = collapsed(NotePlainText.fromHTML(head))
+                if text.count >= previewCharacters { return String(text.prefix(previewCharacters)) }
+            }
+            return String(collapsed(NotePlainText.fromHTML(body)).prefix(previewCharacters))
+        case "code", "markdown":
+            return String(collapsed(body).prefix(previewCharacters))
+        default:
+            return ""
         }
-        let collapsed = text.split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }
+    }
+
+    private static let previewHeadBytes = 8_192
+
+    /// The start of a long HTML body, cut after a `>`, or nil when the whole body is short or the start is unsafe to cut.
+    nonisolated static func htmlHead(_ html: String) -> String? {
+        let bytes = html.utf8
+        guard bytes.count > previewHeadBytes * 2,
+              let end = bytes.prefix(previewHeadBytes).lastIndex(of: UInt8(ascii: ">"))
+        else { return nil }
+        let head = String(html[...end])
+        let lowered = head.lowercased()
+        guard !lowered.contains("<style"), !lowered.contains("<script"), !lowered.contains("<!--") else { return nil }
+        return head
+    }
+
+    nonisolated private static func collapsed(_ text: String) -> String {
+        text.split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }.joined(separator: " ")
-        return String(collapsed.prefix(previewCharacters))
     }
 
     nonisolated static func fileBadge(noteType: String, mime: String) -> String? {

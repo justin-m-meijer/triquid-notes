@@ -34,6 +34,20 @@ struct SearchResultSnippet: Equatable, Sendable {
     }
 }
 
+/// How search marks matching words: solid yellow with black text, as Mail and Notes do. A see-through yellow under
+/// grey preview text turned olive on the dark theme and was hard to read.
+enum SearchHighlightStyle {
+    static var exact: [NSAttributedString.Key: Any] { [
+        .backgroundColor: UIColor.systemYellow.withAlphaComponent(0.9),
+        .foregroundColor: UIColor.black,
+    ] }
+    /// Trilium 0.106's fuzzy matches: orange, so they still read as "close, not exact".
+    static var fuzzy: [NSAttributedString.Key: Any] { [
+        .backgroundColor: UIColor.systemOrange.withAlphaComponent(0.7),
+        .foregroundColor: UIColor.black,
+    ] }
+}
+
 /// Turns Trilium's highlighted snippets (escaped text, `<b>` around matches, `<br>` between lines) into styled text.
 enum SearchSnippetFormatter {
     private static let tagPattern = try? NSRegularExpression(pattern: #"<(/?)(b|br)\b([^>]*)>"#, options: [.caseInsensitive])
@@ -42,7 +56,7 @@ enum SearchSnippetFormatter {
         if let html = highlightedHTML?.trimmingCharacters(in: .whitespacesAndNewlines), !html.isEmpty,
            let tagPattern {
             let result = NSMutableAttributedString()
-            var highlight: UIColor?
+            var highlight: [NSAttributedString.Key: Any]?
             var cursor = html.startIndex
             for match in tagPattern.matches(in: html, range: NSRange(html.startIndex..., in: html)) {
                 guard let range = Range(match.range, in: html) else { continue }
@@ -57,9 +71,7 @@ enum SearchSnippetFormatter {
                 } else {
                     let attributes = Range(match.range(at: 3), in: html).map { String(html[$0]) } ?? ""
                     // v0.106 marks fuzzy matches with a class; they get a paler highlight than exact ones.
-                    highlight = attributes.contains("class=")
-                        ? UIColor.systemOrange.withAlphaComponent(0.25)
-                        : UIColor.systemYellow.withAlphaComponent(0.38)
+                    highlight = attributes.contains("class=") ? SearchHighlightStyle.fuzzy : SearchHighlightStyle.exact
                 }
             }
             append(String(html[cursor...]), highlight: highlight, to: result)
@@ -73,12 +85,12 @@ enum SearchSnippetFormatter {
         return AttributedString(text)
     }
 
-    private static func append(_ escaped: String, highlight: UIColor?, to result: NSMutableAttributedString) {
+    private static func append(_ escaped: String, highlight: [NSAttributedString.Key: Any]?, to result: NSMutableAttributedString) {
         let text = unescape(escaped)
         guard !text.isEmpty else { return }
         var attributes: [NSAttributedString.Key: Any] = [:]
         if let highlight {
-            attributes[.backgroundColor] = highlight
+            attributes.merge(highlight) { _, new in new }
             attributes[.inlinePresentationIntent] = InlinePresentationIntent.stronglyEmphasized.rawValue
         }
         result.append(NSAttributedString(string: text, attributes: attributes))

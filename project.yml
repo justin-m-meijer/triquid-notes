@@ -50,7 +50,7 @@ settings:
     # Source of truth for XcodeGen. Identity Version/Build is applied on the next
     # build (Scripts/sync_project_yml_version.sh writes the values back here).
     MARKETING_VERSION: "1.2"
-    CURRENT_PROJECT_VERSION: "124"
+    CURRENT_PROJECT_VERSION: "125"
 
 packages:
   Highlightr:
