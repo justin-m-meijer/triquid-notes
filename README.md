@@ -48,6 +48,9 @@ Then:
 Do not edit the generated `Trinote.xcodeproj` by hand: change `project.yml` and run `xcodegen generate`
 again. Swift Package Manager fetches the one dependency, Highlightr, on the first build.
 
+Don't want to build it yourself? The [App Store version](https://apps.apple.com/app/id6816314389)
+is signed and ready for iPhone, iPad and Mac, and buying it supports development.
+
 ## Connecting to your server
 
 You need a self-hosted Trilium server, version 0.95 to 0.106.
@@ -89,3 +92,8 @@ these files, those files must stay under the MPL 2.0 and their source must be av
 Bundled third-party libraries keep their own licences; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 Triquid Notes is not affiliated with or endorsed by the Trilium project.
+
+## Name and icon
+
+The code is MPL 2.0; the name "Triquid Notes" and the app icon are not. Forks are welcome, under a
+different name and icon.
