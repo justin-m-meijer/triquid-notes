@@ -22,6 +22,7 @@ struct NoteListView: View {
     @AppStorage("colorTheme") private var colorTheme: String = ColorTheme.default.rawValue
     @State private var content = NoteListContent()
     @State private var isLoading = true
+    @State private var inboxError: String?
     @State private var filter = ""
     @State private var showsFilter = false
     @State private var pendingDelete: NoteListRowData?
@@ -108,6 +109,14 @@ struct NoteListView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(removing: .title)
         .task(id: "\(source)-\(order.rawValue)-\(refreshToken)-\(appState.activeProfile?.id ?? "")") { await load() }
+        .alert(
+            String(localized: "Couldn't Create the Inbox", comment: "Empty Inbox: create failed"),
+            isPresented: Binding(get: { inboxError != nil }, set: { if !$0 { inboxError = nil } })
+        ) {
+            Button(String(localized: "OK", comment: "Alert dismiss")) { inboxError = nil }
+        } message: {
+            Text(inboxError ?? "")
+        }
         // The same confirm popup as the tree and the note screen, with the permanent-erase switch.
         .noteDeleteConfirmationAlert(
             isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }),
@@ -329,6 +338,18 @@ struct NoteListView: View {
                 Label(String(localized: "No Notes", comment: "Note list: nothing to show"), systemImage: "doc.text")
             } description: {
                 Text(content.missingSourceHint ?? String(localized: "Notes you add here appear in this list.", comment: "Note list: empty"))
+            } actions: {
+                if content.missingInbox {
+                    Button(String(localized: "Create an Inbox", comment: "Empty Inbox: makes an Inbox note labeled #inbox")) {
+                        do {
+                            try InboxNote.create(appState: appState)
+                            Task { await load() }
+                        } catch {
+                            inboxError = error.localizedDescription
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
             }
         }
     }
@@ -371,7 +392,7 @@ struct NoteListView: View {
         defer { isLoading = false }
         let persistence = PersistenceManager.shared
         let loader = await NoteListLoader.background(persistence.container)
-        let inboxId = persistence.cachedNoteIds(withLabel: "inbox", serverProfileId: profileId).first
+        let inboxId = InboxNote.find(profileId: profileId, persistence: persistence)?.noteId
         let favorites = ((try? persistence.fetchFavorites(serverProfileId: profileId)) ?? []).map(\.noteId)
         let recents = ((try? persistence.fetchRecentNotes(serverProfileId: profileId, limit: 50)) ?? []).map(\.noteId)
         // A notebook not cached yet (lazy tree) is fetched once from the server, then read from the cache.

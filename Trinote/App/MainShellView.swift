@@ -498,6 +498,7 @@ struct MainShellModifiers: ViewModifier {
     @Environment(AppState.self) private var appState
     /// Called when a share arrives, so the layout can bring the notes forward.
     let onShareImportActivated: () -> Void
+    @State private var showsInboxSetup = false
 
     func body(content: Content) -> some View {
         // Observe share-import activation so the layout can react when a share arrives.
@@ -519,6 +520,17 @@ struct MainShellModifiers: ViewModifier {
             }
             .sheet(item: firstSyncRequest) { request in
                 FirstSyncChoiceSheet(request: request)
+                    .environment(appState)
+            }
+            // Once per server, after its first sync, when it has no inbox yet.
+            .task(id: appState.activeProfile?.id) {
+                if InboxSetupSheet.shouldOffer(appState: appState) { showsInboxSetup = true }
+            }
+            .onChange(of: appState.syncManager.lastFullSyncDate) { _, _ in
+                if InboxSetupSheet.shouldOffer(appState: appState) { showsInboxSetup = true }
+            }
+            .sheet(isPresented: $showsInboxSetup) {
+                InboxSetupSheet()
                     .environment(appState)
             }
     }

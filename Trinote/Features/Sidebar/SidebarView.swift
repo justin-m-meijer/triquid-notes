@@ -49,6 +49,9 @@ struct SidebarView: View {
     @State private var loadedKey: String?
     @State private var expanded: Set<String> = []
     @State private var showsNewNotebook = false
+    @AppStorage(SavedSearches.storageKey) private var savedSearchesRaw = ""
+    @State private var renamingSearch: SavedSearch?
+    @State private var renameSearchTitle = ""
     @State private var newNotebookTitle = ""
     @State private var showsSyncDetails = false
     @State private var showsSwitchUser = false
@@ -92,6 +95,7 @@ struct SidebarView: View {
                     smartRow(.recents, icon: "clock", count: nil)
                 }
                 .padding(.horizontal, 8)
+                savedSearchesSection
                 notebooksHeader
                 VStack(spacing: 1) {
                     ForEach(sorted(notebooks)) { notebook in
@@ -380,6 +384,77 @@ struct SidebarView: View {
         ) {
             select(.list(source))
         }
+    }
+
+    // MARK: - Saved searches
+
+    private var savedSearches: [SavedSearch] {
+        SavedSearches.list(for: appState.activeProfile, raw: savedSearchesRaw)
+    }
+
+    /// Searches kept from the search screen; a tap runs the search again.
+    @ViewBuilder
+    private var savedSearchesSection: some View {
+        if !savedSearches.isEmpty {
+            sectionHeader(String(localized: "Saved Searches", comment: "Sidebar section: searches kept from the search screen"))
+            VStack(spacing: 1) {
+                ForEach(savedSearches) { search in
+                    row(
+                        title: search.name,
+                        icon: { Image(systemName: "magnifyingglass").font(.system(size: 16)) },
+                        count: nil,
+                        isSelected: false,
+                        disclosure: nil,
+                        indent: 0
+                    ) {
+                        appState.pendingSearchQuery = search.query
+                        select(.search)
+                    }
+                    .contextMenu {
+                        Button {
+                            renameSearchTitle = search.name
+                            renamingSearch = search
+                        } label: {
+                            Label(String(localized: "Rename", comment: "Saved search menu"), systemImage: "pencil")
+                        }
+                        Button(role: .destructive) {
+                            if let profile = appState.activeProfile { SavedSearches.remove(search, profile: profile) }
+                        } label: {
+                            Label(String(localized: "Remove Saved Search", comment: "Saved search menu"), systemImage: "trash")
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 8)
+            .alert(
+                String(localized: "Rename Saved Search", comment: "Saved search rename alert title"),
+                isPresented: Binding(get: { renamingSearch != nil }, set: { if !$0 { renamingSearch = nil } })
+            ) {
+                TextField(String(localized: "Name", comment: "Saved search name field"), text: $renameSearchTitle)
+                Button(String(localized: "Rename", comment: "Saved search menu")) {
+                    if let search = renamingSearch, let profile = appState.activeProfile {
+                        SavedSearches.rename(search, to: renameSearchTitle, profile: profile)
+                    }
+                    renamingSearch = nil
+                }
+                Button(String(localized: "Cancel", comment: "Cancel button"), role: .cancel) { renamingSearch = nil }
+            }
+        }
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 12, weight: .semibold))
+                .textCase(.uppercase)
+                .tracking(0.6)
+            Spacer()
+        }
+        .foregroundStyle(palette.secondary)
+        .padding(.leading, 20)
+        .padding(.trailing, 14)
+        .padding(.top, 14)
+        .padding(.bottom, 4)
     }
 
     private var notebooksHeader: some View {
@@ -797,7 +872,7 @@ struct SidebarView: View {
         guard let profileId = appState.activeProfile?.id else { return }
         let persistence = PersistenceManager.shared
         let loader = await NoteListLoader.background(persistence.container)
-        let inboxId = persistence.cachedNoteIds(withLabel: "inbox", serverProfileId: profileId).first
+        let inboxId = InboxNote.find(profileId: profileId, persistence: persistence)?.noteId
         let favoriteCount = (try? persistence.fetchFavorites(serverProfileId: profileId).count) ?? 0
         // The tree first: the counts look into every note's body for open to-dos and come after.
         notebooks = (try? await loader.notebookTree(profileId: profileId)) ?? []

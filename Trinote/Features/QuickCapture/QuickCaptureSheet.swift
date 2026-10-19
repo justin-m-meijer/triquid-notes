@@ -41,16 +41,12 @@ enum CaptureDestinations {
         }
     }
 
-    /// The person's inbox note. A top-level note named like "Inbox" (for example "00-Inbox") is the
-    /// inbox the tree shows, so it wins; otherwise Trilium's answer, which is the `#inbox` note or,
-    /// without one, today's journal note.
+    /// The person's inbox note by the app-wide rule (`InboxNote`: the `#inbox` note, else a top-level note named
+    /// like "Inbox"), so it is the same note the sidebar's Inbox shows; without one, Trilium's answer, which is
+    /// today's journal note.
     @MainActor
     static func resolveInboxNote(client: any TriliumClientProtocol, profileId: String, day: String) async throws -> NoteIdTitle {
-        let topLevel = (try? PersistenceManager.shared.fetchCachedChildren(parentNoteId: TriliumTreeConstants.rootNoteId, serverProfileId: profileId)) ?? []
-        let named = topLevel.map(\.1).filter { $0.title.localizedCaseInsensitiveContains("inbox") }
-        if let best = named.first(where: { $0.title.caseInsensitiveCompare("inbox") == .orderedSame }) ?? named.first {
-            return NoteIdTitle(noteId: best.noteId, title: best.title, isProtected: best.isProtected)
-        }
+        if let inbox = InboxNote.find(profileId: profileId) { return inbox }
         return try await client.getInboxNote(onISODay: day)
     }
 

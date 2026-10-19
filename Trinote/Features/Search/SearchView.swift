@@ -11,6 +11,9 @@ struct SearchView: View {
     @AppStorage("treeDarkBgColor") private var treeDarkBgColor: String = "#1c1c1e"
     @State private var viewModel: SearchViewModel?
     @FocusState private var isSearchFieldFocused: Bool
+    @AppStorage(SavedSearches.storageKey) private var savedSearchesRaw = ""
+    @State private var showsSaveSearch = false
+    @State private var saveSearchName = ""
 
     private var treeBgColor: Color? {
         guard useCustomTreeColors else { return nil }
@@ -41,6 +44,19 @@ struct SearchView: View {
                 viewModel = vm
                 vm.loadRecentSearches()
             }
+            runPendingSavedSearch()
+        }
+        .onChange(of: appState.pendingSearchQuery) { _, _ in runPendingSavedSearch() }
+        .alert(String(localized: "Save Search", comment: "Search: save the current search"), isPresented: $showsSaveSearch) {
+            TextField(String(localized: "Name", comment: "Saved search name field"), text: $saveSearchName)
+            Button(String(localized: "Save", comment: "Save button")) {
+                if let vm = viewModel, let profile = appState.activeProfile {
+                    SavedSearches.add(name: saveSearchName, query: vm.query, profile: profile)
+                }
+            }
+            Button(String(localized: "Cancel", comment: "Cancel button"), role: .cancel) {}
+        } message: {
+            Text(String(localized: "It appears under Saved Searches in the menu.", comment: "Search: save alert message"))
         }
         .navigationDestination(for: NoteRoute.self) { route in
             route.noteDestination?.makeDetailView()
@@ -175,12 +191,48 @@ struct SearchView: View {
             .padding(.vertical, 11)
             // A Liquid Glass capsule, like the system search fields.
             .glassEffect(.regular.interactive(), in: .capsule)
+
+            if !vm.query.isEmpty, vm.hasSearched {
+                saveSearchButton(vm)
+            }
         }
         .padding(.horizontal)
         // Beside the tree the field starts where the tree card does, right under the title.
         .padding(.top, horizontalSizeClass == .regular ? 0 : 16)
         .padding(.bottom, 4)
         .background(treeChromeBackground)
+    }
+
+    /// Keeps the current search in the sidebar, or takes it out again when it is already there.
+    private func saveSearchButton(_ vm: SearchViewModel) -> some View {
+        let isSaved = SavedSearches.list(for: appState.activeProfile, raw: savedSearchesRaw)
+            .contains { $0.query == SavedSearches.normalized(vm.query) }
+        return Button {
+            if isSaved {
+                if let profile = appState.activeProfile { SavedSearches.remove(query: vm.query, profile: profile) }
+            } else {
+                saveSearchName = LabelQuery.parse(vm.query)?.friendly ?? SavedSearches.normalized(vm.query)
+                showsSaveSearch = true
+            }
+        } label: {
+            Image(systemName: isSaved ? "bookmark.fill" : "bookmark")
+                .font(.system(size: 17, weight: .medium))
+                .frame(width: 44, height: 44)
+                .contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: .circle)
+        .accessibilityLabel(isSaved
+            ? String(localized: "Remove saved search", comment: "VoiceOver: search bookmark button")
+            : String(localized: "Save search", comment: "VoiceOver: search bookmark button"))
+    }
+
+    /// Runs a search picked under Saved Searches in the sidebar.
+    private func runPendingSavedSearch() {
+        guard let query = appState.pendingSearchQuery, let vm = viewModel else { return }
+        appState.pendingSearchQuery = nil
+        vm.query = query
+        vm.searchNow()
     }
 
     private func openNote(_ note: NoteItem, findQuery: String?, matchIndex1Based: Int?) {

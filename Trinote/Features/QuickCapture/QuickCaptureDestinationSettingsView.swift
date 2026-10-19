@@ -19,7 +19,7 @@ struct QuickCaptureDestinationSettingsView: View {
                     }
                 }
             } footer: {
-                Text(String(localized: "Inbox is Trilium's inbox note, or today's journal note when there is none.", comment: "Quick capture destination footer"))
+                Text(String(localized: "Inbox is the note labeled #inbox, or a top-level note named Inbox. Without one, notes go to today's journal note.", comment: "Quick capture destination footer"))
             }
             .listRowBackground(Color.trinoteCard)
 

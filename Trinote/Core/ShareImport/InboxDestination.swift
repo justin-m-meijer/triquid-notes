@@ -45,6 +45,10 @@ enum InboxDestination: Equatable, Sendable {
     /// decide, which also keeps Trilium 0.105 from building a journal for a capture (its inbox request would).
     @MainActor
     static func resolve(appState: AppState) async -> InboxDestination {
+        // The app-wide rule first, so sharing lands in the note the sidebar's Inbox shows.
+        if let profileId = appState.activeProfile?.id, let inbox = InboxNote.find(profileId: profileId) {
+            return .inbox(noteId: inbox.noteId, title: inbox.title)
+        }
         if let client = appState.client, appState.isOnline,
            TriliumServerCompatibility.supportsInboxTarget(appState.serverAppInfo) {
             do {
@@ -55,9 +59,7 @@ enum InboxDestination: Equatable, Sendable {
         }
         guard let profileId = appState.activeProfile?.id else { return .topLevel }
         let persistence = PersistenceManager.shared
-        let inbox = persistence.cachedNoteIds(withLabel: "inbox", serverProfileId: profileId).lazy
-            .compactMap { try? persistence.fetchCachedNote(id: $0, serverProfileId: profileId) }
-            .first
+        let inbox = InboxNote.find(profileId: profileId, persistence: persistence)
         let inboxId = inbox?.noteId
         let inboxTitle = inbox?.title ?? ""
         return fromSyncedNotes(

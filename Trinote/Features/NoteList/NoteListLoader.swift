@@ -83,6 +83,8 @@ struct NoteListContent: Sendable, Equatable {
     var rows: [NoteListRowData] = []
     /// Set when a smart folder has nothing to point at (no `#inbox` note).
     var missingSourceHint: String?
+    /// The Inbox smart folder has no inbox note to show; the empty state offers to create one.
+    var missingInbox = false
 }
 
 /// Counts next to the sidebar's smart folders.
@@ -146,7 +148,8 @@ actor NoteListLoader {
             notes = try todoNotes(profileId: profileId)
         case .inbox:
             guard let inboxNoteId else {
-                content.missingSourceHint = String(localized: "Mark a note with #inbox in Trilium to collect captured notes here.", comment: "Inbox smart folder without an #inbox note")
+                content.missingSourceHint = String(localized: "Quick notes and things you share to the app collect in an inbox. Create one, or label a note #inbox in Trilium.", comment: "Inbox smart folder without an inbox note")
+                content.missingInbox = true
                 return content
             }
             notes = try children(of: inboxNoteId, profileId: profileId).map(\.note)

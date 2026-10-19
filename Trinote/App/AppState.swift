@@ -35,6 +35,8 @@ final class AppState {
     /// A note to open from outside the tree: a `triquidnotes://note/<id>` link, Spotlight or a
     /// Shortcut. `MainShellView` consumes it and clears it.
     var pendingNoteLink: NoteLink?
+    /// A saved search picked in the sidebar: `SearchView` runs it and clears it.
+    var pendingSearchQuery: String?
     private let persistence = PersistenceManager.shared
     private let cacheExclusion = CacheExclusionPolicy()
     private let keychain = KeychainManager.shared
@@ -1403,6 +1405,8 @@ final class AppState {
         )
         try persistence.saveProfile(profile)
         activateLocalNotebook(profile)
+        // A notebook on this device has no Trilium to make an inbox in, so it starts with one.
+        try? InboxNote.create(appState: self)
     }
 
     func activateLocalNotebook(_ profile: ServerProfile) {

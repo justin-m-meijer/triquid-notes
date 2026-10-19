@@ -196517,6 +196517,2828 @@
           }
         }
       }
+    },
+    "Quick notes and things you share to the app collect in an inbox. Create one, or label a note #inbox in Trilium.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تُجمع الملاحظات السريعة وما تشاركه مع التطبيق في صندوق الوارد. أنشئ واحدًا، أو ضع الوسم #inbox على ملاحظة في Trilium."
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Бързите бележки и нещата, които споделяте с приложението, се събират във Входящи. Създайте ги или добавете етикет #inbox на бележка в Trilium."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rychlé poznámky a věci sdílené do aplikace se shromažďují v Doručených. Vytvořte je nebo označte poznámku štítkem #inbox v Trilium."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hurtige noter og ting, du deler med appen, samles i en indbakke. Opret en, eller giv en note etiketten #inbox i Trilium."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schnellnotizen und Inhalte, die du mit der App teilst, sammeln sich in einem Eingang. Erstelle einen oder versieh eine Notiz in Trilium mit dem Label #inbox."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Οι γρήγορες σημειώσεις και ό,τι κοινοποιείτε στην εφαρμογή συγκεντρώνονται στα Εισερχόμενα. Δημιουργήστε τα ή βάλτε σε μια σημείωση την ετικέτα #inbox στο Trilium."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick notes and things you share to the app collect in an inbox. Create one, or label a note #inbox in Trilium."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las notas rápidas y lo que compartes con la app se reúnen en una bandeja de entrada. Crea una o etiqueta una nota como #inbox en Trilium."
+          }
+        },
+        "et": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiirmärkmed ja rakendusse jagatud asjad koonduvad sisendkausta. Loo see või märgi märge Triliumis sildiga #inbox."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pikamuistiinpanot ja sovellukseen jakamasi asiat kerätään saapuneisiin. Luo ne tai merkitse muistiinpano tunnisteella #inbox Triliumissa."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les notes rapides et les éléments que vous partagez avec l’app sont rassemblés dans une boîte de réception. Créez-en une, ou étiquetez une note #inbox dans Trilium."
+          }
+        },
+        "ga": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bailítear nótaí tapa agus rudaí a roinneann tú leis an aip sa Bhosca Isteach. Cruthaigh ceann, nó clib #inbox a chur ar nóta i Trilium."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "त्वरित नोट और ऐप के साथ साझा की गई चीज़ें इनबॉक्स में जमा होती हैं। एक बनाएँ, या Trilium में किसी नोट को #inbox लेबल दें।"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brze bilješke i stvari koje dijeliš s aplikacijom skupljaju se u ulaznom pretincu. Stvori ga ili označi bilješku oznakom #inbox u Trilium."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A gyorsjegyzetek és az appnak megosztott dolgok a Beérkezőkben gyűlnek. Hozd létre, vagy címkézz meg egy jegyzetet #inbox címkével a Triliumban."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le note rapide e ciò che condividi con l’app si raccolgono in Inbox. Creala, oppure etichetta una nota #inbox in Trilium."
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Greitieji užrašai ir tai, kuo dalijatės su programa, kaupiami gautuosiuose. Sukurkite juos arba pažymėkite užrašą žyma #inbox programoje Trilium."
+          }
+        },
+        "lv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ātrās piezīmes un tas, ko kopīgojat lietotnei, tiek krātas iesūtnē. Izveidojiet to vai piešķiriet piezīmei etiķeti #inbox programmā Trilium."
+          }
+        },
+        "mt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In-noti malajr u dak li taqsam mal-app jinġabru fl-Inbox. Oħloq waħda, jew tikkettja nota #inbox f’Trilium."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snelle notities en dingen die je met de app deelt, komen in een inbox terecht. Maak er een aan, of geef een notitie in Trilium het label #inbox."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szybkie notatki i rzeczy udostępnione aplikacji trafiają do skrzynki odbiorczej. Utwórz ją albo oznacz notatkę etykietą #inbox w Trilium."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As notas rápidas e o que partilha com a app ficam reunidas numa caixa de entrada. Crie uma ou etiquete uma nota com #inbox no Trilium."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notele rapide și lucrurile pe care le trimiți aplicației se adună în Inbox. Creează-l sau etichetează o notă cu #inbox în Trilium."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Быстрые заметки и то, чем вы делитесь с приложением, собираются во входящих. Создайте их или добавьте заметке метку #inbox в Trilium."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rýchle poznámky a veci zdieľané do aplikácie sa zhromažďujú v Doručených. Vytvorte ich alebo označte poznámku štítkom #inbox v Trilium."
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hitre beležke in stvari, ki jih deliš z aplikacijo, se zbirajo v mapi Prejeto. Ustvari jo ali označi beležko z oznako #inbox v Trilium."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snabbanteckningar och sådant du delar till appen samlas i en inkorg. Skapa en, eller etikettera en anteckning #inbox i Trilium."
+          }
+        }
+      }
+    },
+    "Couldn't Create the Inbox": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّر إنشاء صندوق الوارد"
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Входящите не можаха да бъдат създадени"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doručené se nepodařilo vytvořit"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Indbakken kunne ikke oprettes"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eingang konnte nicht erstellt werden"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Αδυναμία δημιουργίας Εισερχομένων"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't Create the Inbox"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo crear la bandeja de entrada"
+          }
+        },
+        "et": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sisendkausta loomine ebaõnnestus"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saapuneiden luominen epäonnistui"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de créer la boîte de réception"
+          }
+        },
+        "ga": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Níorbh fhéidir an Bosca Isteach a chruthú"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इनबॉक्स नहीं बनाया जा सका"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nije moguće stvoriti Ulazni pretinac"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nem sikerült létrehozni a Beérkezőket"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile creare Inbox"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nepavyko sukurti Gautųjų"
+          }
+        },
+        "lv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neizdevās izveidot iesūtni"
+          }
+        },
+        "mt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ma setax jinħoloq l-Inbox"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kan de inbox niet aanmaken"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie można utworzyć skrzynki odbiorczej"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível criar a Caixa de entrada"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nu s-a putut crea Inbox"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось создать «Входящие»"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doručené sa nepodarilo vytvoriť"
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mape Prejeto ni bilo mogoče ustvariti"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Det gick inte att skapa inkorgen"
+          }
+        }
+      }
+    },
+    "Create an Inbox": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إنشاء صندوق الوارد"
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Създаване на Входящи"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vytvořit Doručené"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opret en indbakke"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eingang erstellen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Δημιουργία Εισερχομένων"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create an Inbox"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crear una bandeja de entrada"
+          }
+        },
+        "et": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loo sisendkaust"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luo Saapuneet"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Créer une boîte de réception"
+          }
+        },
+        "ga": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cruthaigh Bosca Isteach"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इनबॉक्स बनाएँ"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stvori Ulazni pretinac"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beérkezők létrehozása"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea Inbox"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sukurti Gautuosius"
+          }
+        },
+        "lv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Izveidot iesūtni"
+          }
+        },
+        "mt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oħloq Inbox"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maak een inbox aan"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utwórz skrzynkę odbiorczą"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Criar uma Caixa de entrada"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creează Inbox"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Создать «Входящие»"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vytvoriť Doručené"
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustvari mapo Prejeto"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skapa en inkorg"
+          }
+        }
+      }
+    },
+    "Inbox is the note labeled #inbox, or a top-level note named Inbox. Without one, notes go to today's journal note.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "صندوق الوارد هو الملاحظة ذات الوسم #inbox، أو ملاحظة من المستوى الأعلى باسم صندوق الوارد. بدونه تذهب الملاحظات إلى ملاحظة يومية اليوم."
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Входящи е бележката с етикет #inbox или бележка от най-високо ниво с име Входящи. Без нея бележките отиват в днешната бележка от дневника."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doručené jsou poznámka se štítkem #inbox nebo poznámka nejvyšší úrovně s názvem Doručené. Bez nich poznámky putují do dnešní poznámky deníku."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Indbakken er noten med etiketten #inbox eller en note på øverste niveau med navnet Indbakke. Uden en havner noter i dagens journalnote."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Eingang ist die Notiz mit dem Label #inbox oder eine Notiz der obersten Ebene namens Eingang. Ohne sie landen Notizen in der heutigen Journalnotiz."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Τα Εισερχόμενα είναι η σημείωση με ετικέτα #inbox ή μια σημείωση ανώτατου επιπέδου με όνομα Εισερχόμενα. Χωρίς αυτά, οι σημειώσεις πηγαίνουν στη σημερινή σημείωση ημερολογίου."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inbox is the note labeled #inbox, or a top-level note named Inbox. Without one, notes go to today's journal note."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La bandeja de entrada es la nota etiquetada como #inbox, o una nota de nivel superior llamada Bandeja de entrada. Sin ella, las notas van a la nota de diario de hoy."
+          }
+        },
+        "et": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sisendkaust on märge sildiga #inbox või ülemise taseme märge nimega Sisendkaust. Ilma selleta lähevad märkmed tänasesse päevikumärkmesse."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saapuneet on muistiinpano, jolla on tunniste #inbox, tai ylimmän tason muistiinpano nimeltä Saapuneet. Ilman sitä muistiinpanot menevät tämän päivän päiväkirjamuistiinpanoon."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La boîte de réception est la note étiquetée #inbox, ou une note de premier niveau nommée Boîte de réception. Sans elle, les notes vont dans la note de journal du jour."
+          }
+        },
+        "ga": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Is é an Bosca Isteach an nóta a bhfuil an chlib #inbox air, nó nóta barrleibhéil darb ainm Bosca Isteach. Gan ceann, téann nótaí chuig nóta dialainne an lae inniu."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इनबॉक्स वह नोट है जिस पर #inbox लेबल है, या इनबॉक्स नाम का शीर्ष-स्तरीय नोट। इसके बिना नोट आज के जर्नल नोट में जाते हैं।"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ulazni pretinac je bilješka s oznakom #inbox ili bilješka najviše razine pod nazivom Ulazni pretinac. Bez njega bilješke idu u današnju bilješku dnevnika."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Beérkezők a #inbox címkéjű jegyzet, vagy egy Beérkezők nevű legfelső szintű jegyzet. Enélkül a jegyzetek a mai naplójegyzetbe kerülnek."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inbox è la nota con l’etichetta #inbox, o una nota di primo livello chiamata Inbox. Senza, le note vanno nella nota del diario di oggi."
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gautieji yra užrašas su žyma #inbox arba aukščiausio lygio užrašas pavadinimu Gautieji. Be jų užrašai patenka į šiandienos dienoraščio užrašą."
+          }
+        },
+        "lv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iesūtne ir piezīme ar etiķeti #inbox vai augstākā līmeņa piezīme ar nosaukumu Iesūtne. Bez tās piezīmes nonāk šodienas dienasgrāmatas piezīmē."
+          }
+        },
+        "mt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L-Inbox hija n-nota bit-tikketta #inbox, jew nota ta’ livell għoli bl-isem Inbox. Mingħajrha, in-noti jmorru fin-nota tal-ġurnal ta’ llum."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De inbox is de notitie met het label #inbox, of een notitie op het hoogste niveau met de naam Inbox. Zonder inbox komen notities in de journaalnotitie van vandaag."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skrzynka odbiorcza to notatka z etykietą #inbox lub notatka najwyższego poziomu o nazwie Skrzynka odbiorcza. Bez niej notatki trafiają do dzisiejszej notatki dziennika."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Caixa de entrada é a nota com a etiqueta #inbox, ou uma nota de nível superior chamada Caixa de entrada. Sem ela, as notas vão para a nota do diário de hoje."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inbox este nota etichetată #inbox sau o notă de nivel superior numită Inbox. Fără el, notele merg în nota de jurnal de azi."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«Входящие» — это заметка с меткой #inbox или заметка верхнего уровня с названием «Входящие». Без неё заметки попадают в сегодняшнюю заметку журнала."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doručené sú poznámka so štítkom #inbox alebo poznámka najvyššej úrovne s názvom Doručené. Bez nich poznámky idú do dnešnej poznámky denníka."
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prejeto je beležka z oznako #inbox ali beležka najvišje ravni z imenom Prejeto. Brez nje beležke končajo v današnji beležki dnevnika."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inkorgen är anteckningen med etiketten #inbox, eller en anteckning på toppnivå med namnet Inkorg. Utan den hamnar anteckningar i dagens journalanteckning."
+          }
+        }
+      }
+    },
+    "Save Search": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حفظ البحث"
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запазване на търсене"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uložit hledání"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gem søgning"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suche sichern"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Αποθήκευση αναζήτησης"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save Search"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardar búsqueda"
+          }
+        },
+        "et": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salvesta otsing"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tallenna haku"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistrer la recherche"
+          }
+        },
+        "ga": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sábháil an Cuardach"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "खोज सहेजें"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spremi pretraživanje"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keresés mentése"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salva ricerca"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Įrašyti paiešką"
+          }
+        },
+        "lv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saglabāt meklējumu"
+          }
+        },
+        "mt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aħżen it-Tiftix"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bewaar zoekopdracht"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zachowaj wyszukiwanie"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardar Pesquisa"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salvează căutarea"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранить поиск"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uložiť hľadanie"
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shrani iskanje"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spara sökning"
+          }
+        }
+      }
+    },
+    "Name": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الاسم"
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Име"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Název"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Navn"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Όνομα"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombre"
+          }
+        },
+        "et": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nimi"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nimi"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nom"
+          }
+        },
+        "ga": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ainm"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नाम"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naziv"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Név"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nome"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pavadinimas"
+          }
+        },
+        "lv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nosaukums"
+          }
+        },
+        "mt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Isem"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naam"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nazwa"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nome"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nume"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Имя"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Názov"
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ime"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Namn"
+          }
+        }
+      }
+    },
+    "It appears under Saved Searches in the menu.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يظهر ضمن عمليات البحث المحفوظة في القائمة."
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Появява се в менюто под Запазени търсения."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobrazí se v nabídce v části Uložená hledání."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Den vises under Gemte søgninger i menuen."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sie erscheint im Menü unter „Gesicherte Suchen“."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Εμφανίζεται στο μενού στις Αποθηκευμένες αναζητήσεις."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It appears under Saved Searches in the menu."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aparece en Búsquedas guardadas en el menú."
+          }
+        },
+        "et": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See ilmub menüüs jaotises Salvestatud otsingud."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se näkyy valikossa kohdassa Tallennetut haut."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elle apparaît sous Recherches enregistrées dans le menu."
+          }
+        },
+        "ga": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taispeántar é faoi Cuardaigh Shábháilte sa roghchlár."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "यह मेनू में सहेजी गई खोजें के अंतर्गत दिखती है।"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pojavljuje se u izborniku pod Spremljena pretraživanja."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A menüben a Mentett keresések alatt jelenik meg."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appare in Ricerche salvate nel menu."
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rodoma meniu skiltyje Įrašytos paieškos."
+          }
+        },
+        "lv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tas parādās izvēlnē sadaļā Saglabātie meklējumi."
+          }
+        },
+        "mt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tidher taħt Tiftix Maħżun fil-menu."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je vindt hem in het menu onder Bewaarde zoekopdrachten."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pojawi się w menu w sekcji Zachowane wyszukiwania."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aparece em Pesquisas Guardadas no menu."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apare în meniu la Căutări salvate."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Он появится в меню в разделе «Сохранённые поиски»."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobrazí sa v ponuke v časti Uložené hľadania."
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "V meniju se prikaže pod Shranjena iskanja."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Den visas under Sparade sökningar i menyn."
+          }
+        }
+      }
+    },
+    "Remove saved search": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إزالة البحث المحفوظ"
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Премахване на запазеното търсене"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odebrat uložené hledání"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fjern gemt søgning"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gesicherte Suche entfernen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Αφαίρεση αποθηκευμένης αναζήτησης"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove saved search"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quitar búsqueda guardada"
+          }
+        },
+        "et": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eemalda salvestatud otsing"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poista tallennettu haku"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer la recherche enregistrée"
+          }
+        },
+        "ga": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bain an cuardach sábháilte"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सहेजी गई खोज हटाएँ"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ukloni spremljeno pretraživanje"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mentett keresés eltávolítása"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi ricerca salvata"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pašalinti įrašytą paiešką"
+          }
+        },
+        "lv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noņemt saglabāto meklējumu"
+          }
+        },
+        "mt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neħħi t-tiftix maħżun"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwijder bewaarde zoekopdracht"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń zachowane wyszukiwanie"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remover pesquisa guardada"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimină căutarea salvată"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалить сохранённый поиск"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odstrániť uložené hľadanie"
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odstrani shranjeno iskanje"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta bort sparad sökning"
+          }
+        }
+      }
+    },
+    "Save search": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حفظ البحث"
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запазване на търсене"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uložit hledání"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gem søgning"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suche sichern"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Αποθήκευση αναζήτησης"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save search"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardar búsqueda"
+          }
+        },
+        "et": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salvesta otsing"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tallenna haku"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistrer la recherche"
+          }
+        },
+        "ga": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sábháil an cuardach"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "खोज सहेजें"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spremi pretraživanje"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keresés mentése"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salva ricerca"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Įrašyti paiešką"
+          }
+        },
+        "lv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saglabāt meklējumu"
+          }
+        },
+        "mt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aħżen it-tiftix"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bewaar zoekopdracht"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zachowaj wyszukiwanie"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardar pesquisa"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salvează căutarea"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранить поиск"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uložiť hľadanie"
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shrani iskanje"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spara sökning"
+          }
+        }
+      }
+    },
+    "Saved Searches": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عمليات البحث المحفوظة"
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запазени търсения"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uložená hledání"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gemte søgninger"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gesicherte Suchen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Αποθηκευμένες αναζητήσεις"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved Searches"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Búsquedas guardadas"
+          }
+        },
+        "et": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salvestatud otsingud"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tallennetut haut"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recherches enregistrées"
+          }
+        },
+        "ga": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuardaigh Shábháilte"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सहेजी गई खोजें"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spremljena pretraživanja"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mentett keresések"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ricerche salvate"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Įrašytos paieškos"
+          }
+        },
+        "lv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saglabātie meklējumi"
+          }
+        },
+        "mt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiftix Maħżun"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bewaarde zoekopdrachten"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zachowane wyszukiwania"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pesquisas Guardadas"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Căutări salvate"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранённые поиски"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uložené hľadania"
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shranjena iskanja"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sparade sökningar"
+          }
+        }
+      }
+    },
+    "Remove Saved Search": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إزالة البحث المحفوظ"
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Премахване на запазено търсене"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odebrat uložené hledání"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fjern gemt søgning"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gesicherte Suche entfernen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Αφαίρεση αποθηκευμένης αναζήτησης"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove Saved Search"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quitar búsqueda guardada"
+          }
+        },
+        "et": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eemalda salvestatud otsing"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poista tallennettu haku"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer la recherche enregistrée"
+          }
+        },
+        "ga": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bain an Cuardach Sábháilte"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सहेजी गई खोज हटाएँ"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ukloni spremljeno pretraživanje"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mentett keresés eltávolítása"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi ricerca salvata"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pašalinti įrašytą paiešką"
+          }
+        },
+        "lv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noņemt saglabāto meklējumu"
+          }
+        },
+        "mt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neħħi t-Tiftix Maħżun"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwijder bewaarde zoekopdracht"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń zachowane wyszukiwanie"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remover Pesquisa Guardada"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimină căutarea salvată"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалить сохранённый поиск"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odstrániť uložené hľadanie"
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odstrani shranjeno iskanje"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta bort sparad sökning"
+          }
+        }
+      }
+    },
+    "Rename Saved Search": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إعادة تسمية البحث المحفوظ"
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Преименуване на запазено търсене"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přejmenovat uložené hledání"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Omdøb gemt søgning"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gesicherte Suche umbenennen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Μετονομασία αποθηκευμένης αναζήτησης"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rename Saved Search"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renombrar búsqueda guardada"
+          }
+        },
+        "et": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nimeta salvestatud otsing ümber"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nimeä tallennettu haku uudelleen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renommer la recherche enregistrée"
+          }
+        },
+        "ga": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Athainmnigh an Cuardach Sábháilte"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सहेजी गई खोज का नाम बदलें"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preimenuj spremljeno pretraživanje"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mentett keresés átnevezése"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rinomina ricerca salvata"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pervardyti įrašytą paiešką"
+          }
+        },
+        "lv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pārsaukt saglabāto meklējumu"
+          }
+        },
+        "mt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Semmi mill-Ġdid it-Tiftix Maħżun"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wijzig naam van bewaarde zoekopdracht"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmień nazwę zachowanego wyszukiwania"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renomear Pesquisa Guardada"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Redenumește căutarea salvată"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Переименовать сохранённый поиск"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Premenovať uložené hľadanie"
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preimenuj shranjeno iskanje"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Byt namn på sparad sökning"
+          }
+        }
+      }
+    },
+    "Connect a server or start a notebook on this device first.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اتصل بخادم أو ابدأ دفتر ملاحظات على هذا الجهاز أولًا."
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Първо свържете сървър или започнете бележник на това устройство."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nejprve připojte server nebo založte poznámkový blok na tomto zařízení."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forbind først en server, eller start en notesbog på denne enhed."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbinde zuerst einen Server oder starte ein Notizbuch auf diesem Gerät."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Συνδέστε πρώτα έναν διακομιστή ή ξεκινήστε ένα σημειωματάριο σε αυτήν τη συσκευή."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect a server or start a notebook on this device first."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Primero conecta un servidor o empieza un cuaderno en este dispositivo."
+          }
+        },
+        "et": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esmalt ühenda server või alusta märkmikku sellel seadmel."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yhdistä ensin palvelin tai aloita muistikirja tällä laitteella."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connectez d’abord un serveur ou créez un carnet sur cet appareil."
+          }
+        },
+        "ga": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ceangail freastalaí nó tosaigh leabhar nótaí ar an ngléas seo ar dtús."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "पहले कोई सर्वर कनेक्ट करें या इस डिवाइस पर नोटबुक शुरू करें।"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prvo poveži poslužitelj ili započni bilježnicu na ovom uređaju."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Előbb csatlakoztass egy szervert, vagy kezdj egy jegyzetfüzetet ezen az eszközön."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prima collega un server o inizia un taccuino su questo dispositivo."
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pirmiausia prijunkite serverį arba pradėkite užrašų knygelę šiame įrenginyje."
+          }
+        },
+        "lv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vispirms pievienojiet serveri vai sāciet piezīmju grāmatiņu šajā ierīcē."
+          }
+        },
+        "mt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L-ewwel qabbad server jew ibda notebook fuq dan l-apparat."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbind eerst een server of begin een notitieboek op dit apparaat."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw połącz serwer lub utwórz notatnik na tym urządzeniu."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ligue primeiro um servidor ou comece um caderno neste dispositivo."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conectează mai întâi un server sau începe un caiet pe acest dispozitiv."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сначала подключите сервер или создайте блокнот на этом устройстве."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najprv pripojte server alebo založte zápisník na tomto zariadení."
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najprej poveži strežnik ali začni zvezek v tej napravi."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anslut en server eller starta en anteckningsbok på den här enheten först."
+          }
+        }
+      }
+    },
+    "Where quick notes go": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أين تذهب الملاحظات السريعة"
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Къде отиват бързите бележки"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kam putují rychlé poznámky"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hvor hurtige noter havner"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wohin Schnellnotizen gehen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Πού πηγαίνουν οι γρήγορες σημειώσεις"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where quick notes go"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dónde van las notas rápidas"
+          }
+        },
+        "et": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kuhu kiirmärkmed lähevad"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minne pikamuistiinpanot menevät"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Où vont les notes rapides"
+          }
+        },
+        "ga": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cá dtéann nótaí tapa"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "त्वरित नोट कहाँ जाते हैं"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kamo idu brze bilješke"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hová kerülnek a gyorsjegyzetek"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dove vanno le note rapide"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kur patenka greitieji užrašai"
+          }
+        },
+        "lv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kur nonāk ātrās piezīmes"
+          }
+        },
+        "mt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fejn imorru n-noti malajr"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waar snelle notities heen gaan"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokąd trafiają szybkie notatki"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para onde vão as notas rápidas"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unde ajung notele rapide"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Куда попадают быстрые заметки"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kam idú rýchle poznámky"
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kam gredo hitre beležke"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vart snabbanteckningar går"
+          }
+        }
+      }
+    },
+    "Quick notes, scans and things you share to Triquid Notes collect in an inbox, so you can sort them later. Inbox in the menu shows what is in it.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تُجمع الملاحظات السريعة والمسوحات الضوئية وما تشاركه مع Triquid Notes في صندوق الوارد لتتمكن من فرزها لاحقًا. يعرض صندوق الوارد في القائمة ما بداخله."
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Бързите бележки, сканирания и неща, които споделяте с Triquid Notes, се събират във Входящи, за да ги подредите по-късно. Входящи в менюто показва какво има в тях."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rychlé poznámky, skeny a věci sdílené do Triquid Notes se shromažďují v Doručených, abyste je mohli později roztřídit. Doručené v nabídce ukazují, co v nich je."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hurtige noter, scanninger og ting, du deler med Triquid Notes, samles i en indbakke, så du kan sortere dem senere. Indbakke i menuen viser, hvad der er i den."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schnellnotizen, Scans und Inhalte, die du mit Triquid Notes teilst, sammeln sich in einem Eingang, damit du sie später sortieren kannst. „Eingang“ im Menü zeigt, was darin ist."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Οι γρήγορες σημειώσεις, οι σαρώσεις και ό,τι κοινοποιείτε στο Triquid Notes συγκεντρώνονται στα Εισερχόμενα, ώστε να τα ταξινομήσετε αργότερα. Τα Εισερχόμενα στο μενού δείχνουν τι περιέχουν."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick notes, scans and things you share to Triquid Notes collect in an inbox, so you can sort them later. Inbox in the menu shows what is in it."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las notas rápidas, los escaneos y lo que compartes con Triquid Notes se reúnen en una bandeja de entrada para ordenarlos más tarde. Bandeja de entrada en el menú muestra lo que contiene."
+          }
+        },
+        "et": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiirmärkmed, skannid ja Triquid Notesi jagatud asjad koonduvad sisendkausta, et saaksid need hiljem sortida. Menüü Sisendkaust näitab, mis selles on."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pikamuistiinpanot, skannaukset ja Triquid Notesiin jakamasi asiat kerätään saapuneisiin, jotta voit lajitella ne myöhemmin. Valikon Saapuneet näyttää, mitä siinä on."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les notes rapides, les scans et les éléments que vous partagez avec Triquid Notes sont rassemblés dans une boîte de réception, pour les trier plus tard. Boîte de réception dans le menu affiche son contenu."
+          }
+        },
+        "ga": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bailítear nótaí tapa, scananna agus rudaí a roinneann tú le Triquid Notes sa Bhosca Isteach, ionas gur féidir leat iad a shórtáil ar ball. Taispeánann Bosca Isteach sa roghchlár cad atá ann."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "त्वरित नोट, स्कैन और Triquid Notes के साथ साझा की गई चीज़ें इनबॉक्स में जमा होती हैं, ताकि आप उन्हें बाद में छाँट सकें। मेनू में इनबॉक्स दिखाता है कि उसमें क्या है।"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brze bilješke, skeniranja i stvari koje dijeliš s Triquid Notes skupljaju se u ulaznom pretincu da ih kasnije razvrstaš. Ulazni pretinac u izborniku prikazuje što je u njemu."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A gyorsjegyzetek, szkennelések és a Triquid Notesnak megosztott dolgok a Beérkezőkben gyűlnek, hogy később rendezhesd őket. A menü Beérkezők eleme megmutatja a tartalmát."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Note rapide, scansioni e ciò che condividi con Triquid Notes si raccolgono in Inbox, così puoi ordinarle più tardi. Inbox nel menu mostra cosa contiene."
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Greitieji užrašai, nuskaitymai ir tai, kuo dalijatės su Triquid Notes, kaupiami gautuosiuose, kad galėtumėte juos išrūšiuoti vėliau. Meniu Gautieji parodo, kas juose yra."
+          }
+        },
+        "lv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ātrās piezīmes, skenējumi un tas, ko kopīgojat ar Triquid Notes, tiek krātas iesūtnē, lai varētu tos kārtot vēlāk. Izvēlnē Iesūtne parāda, kas tajā ir."
+          }
+        },
+        "mt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In-noti malajr, l-iskans u dak li taqsam ma’ Triquid Notes jinġabru fl-Inbox, biex tkun tista’ tissortjahom aktar tard. L-Inbox fil-menu turi x’hemm fiha."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snelle notities, scans en dingen die je met Triquid Notes deelt, komen in een inbox terecht, zodat je ze later kunt sorteren. Inbox in het menu laat zien wat erin zit."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szybkie notatki, skany i rzeczy udostępnione w Triquid Notes trafiają do skrzynki odbiorczej, aby można je było uporządkować później. Skrzynka odbiorcza w menu pokazuje jej zawartość."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As notas rápidas, as digitalizações e o que partilha com o Triquid Notes ficam numa caixa de entrada, para as organizar mais tarde. Caixa de entrada no menu mostra o que contém."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notele rapide, scanările și lucrurile pe care le trimiți către Triquid Notes se adună în Inbox, ca să le sortezi mai târziu. Inbox din meniu arată ce conține."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Быстрые заметки, сканы и то, чем вы делитесь с Triquid Notes, собираются во входящих, чтобы вы могли разобрать их позже. «Входящие» в меню показывают их содержимое."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rýchle poznámky, skeny a veci zdieľané do Triquid Notes sa zhromažďujú v Doručených, aby ste ich mohli neskôr roztriediť. Doručené v ponuke ukazujú, čo v nich je."
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hitre beležke, skeni in stvari, ki jih deliš s Triquid Notes, se zbirajo v mapi Prejeto, da jih lahko pozneje razvrstiš. Prejeto v meniju prikaže, kaj je v njej."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snabbanteckningar, skanningar och sådant du delar till Triquid Notes samlas i en inkorg, så att du kan sortera dem senare. Inkorg i menyn visar vad som finns i den."
+          }
+        }
+      }
+    },
+    "This server has no inbox yet. Create one and it appears at the top of your notes as Inbox, labeled #inbox, so Trilium on your computer uses it too.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يحتوي هذا الخادم على صندوق الوارد بعد. أنشئه وسيظهر أعلى ملاحظاتك باسم صندوق الوارد مع الوسم #inbox، ليستخدمه Trilium على حاسوبك أيضًا."
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Този сървър още няма Входящи. Създайте ги и ще се появят най-отгоре в бележките ви като Входящи с етикет #inbox, така че Trilium на компютъра ви също да ги ползва."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento server zatím nemá Doručené. Vytvořte je a zobrazí se nahoře mezi poznámkami jako Doručené se štítkem #inbox, takže je využije i Trilium na vašem počítači."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denne server har ingen indbakke endnu. Opret en, så vises den øverst i dine noter som Indbakke med etiketten #inbox, så Trilium på din computer også bruger den."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Server hat noch keinen Eingang. Erstelle einen, und er erscheint ganz oben in deinen Notizen als Eingang mit dem Label #inbox, sodass Trilium auf deinem Computer ihn ebenfalls nutzt."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Αυτός ο διακομιστής δεν έχει ακόμη Εισερχόμενα. Δημιουργήστε τα και θα εμφανιστούν στην κορυφή των σημειώσεών σας ως Εισερχόμενα, με ετικέτα #inbox, ώστε να τα χρησιμοποιεί και το Trilium στον υπολογιστή σας."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This server has no inbox yet. Create one and it appears at the top of your notes as Inbox, labeled #inbox, so Trilium on your computer uses it too."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este servidor aún no tiene bandeja de entrada. Crea una y aparecerá al principio de tus notas como Bandeja de entrada, con la etiqueta #inbox, para que Trilium en tu ordenador también la use."
+          }
+        },
+        "et": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sellel serveril pole veel sisendkausta. Loo see ja see ilmub su märkmete ülaossa nimega Sisendkaust ja sildiga #inbox, nii et ka Trilium arvutis kasutab seda."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tällä palvelimella ei ole vielä saapuneita. Luo ne, niin ne näkyvät muistiinpanojesi alussa nimellä Saapuneet ja tunnisteella #inbox, jolloin tietokoneesi Trilium käyttää niitä myös."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce serveur n’a pas encore de boîte de réception. Créez-en une : elle apparaît en haut de vos notes sous le nom Boîte de réception, avec l’étiquette #inbox, pour que Trilium sur votre ordinateur l’utilise aussi."
+          }
+        },
+        "ga": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Níl Bosca Isteach ag an bhfreastalaí seo fós. Cruthaigh ceann agus beidh sé le feiceáil ag barr do chuid nótaí mar Bosca Isteach, leis an gclib #inbox, ionas go n-úsáidfidh Trilium ar do ríomhaire é freisin."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस सर्वर पर अभी इनबॉक्स नहीं है। एक बनाएँ और यह आपके नोट के शीर्ष पर इनबॉक्स के रूप में, #inbox लेबल के साथ दिखेगा, ताकि आपके कंप्यूटर पर Trilium भी इसका उपयोग करे।"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ovaj poslužitelj još nema ulazni pretinac. Stvori ga i pojavit će se na vrhu tvojih bilješki kao Ulazni pretinac s oznakom #inbox, tako da ga koristi i Trilium na tvom računalu."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ennek a szervernek még nincs Beérkezők jegyzete. Hozd létre, és a jegyzeteid tetején jelenik meg Beérkezők néven, #inbox címkével, így a számítógépeden a Trilium is ezt használja."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo server non ha ancora Inbox. Creala e apparirà in cima alle tue note come Inbox, con l’etichetta #inbox, così anche Trilium sul tuo computer la usa."
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Šiame serveryje dar nėra Gautųjų. Sukurkite juos ir jie atsiras užrašų viršuje kaip Gautieji su žyma #inbox, todėl juos naudos ir Trilium jūsų kompiuteryje."
+          }
+        },
+        "lv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Šim serverim vēl nav iesūtnes. Izveidojiet to, un tā parādīsies piezīmju augšdaļā kā Iesūtne ar etiķeti #inbox, lai to izmantotu arī Trilium jūsu datorā."
+          }
+        },
+        "mt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dan is-server għad m’għandux Inbox. Oħloq waħda u tidher fil-quċċata tan-noti tiegħek bħala Inbox, bit-tikketta #inbox, biex Trilium fuq il-kompjuter tiegħek juża wkoll."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze server heeft nog geen inbox. Maak er een aan en hij verschijnt bovenaan je notities als Inbox, met het label #inbox, zodat Trilium op je computer hem ook gebruikt."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten serwer nie ma jeszcze skrzynki odbiorczej. Utwórz ją, a pojawi się na górze notatek jako Skrzynka odbiorcza z etykietą #inbox, dzięki czemu Trilium na komputerze też jej użyje."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este servidor ainda não tem caixa de entrada. Crie uma e aparece no topo das suas notas como Caixa de entrada, com a etiqueta #inbox, para que o Trilium no seu computador também a use."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acest server nu are încă Inbox. Creează-l și va apărea în fruntea notelor tale ca Inbox, cu eticheta #inbox, astfel încât să-l folosească și Trilium pe computer."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На этом сервере пока нет «Входящих». Создайте их, и они появятся вверху ваших заметок как «Входящие» с меткой #inbox, чтобы Trilium на компьютере тоже их использовал."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento server zatiaľ nemá Doručené. Vytvorte ich a zobrazia sa hore medzi poznámkami ako Doručené so štítkom #inbox, takže ich využije aj Trilium na vašom počítači."
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta strežnik še nima mape Prejeto. Ustvari jo in prikazala se bo na vrhu tvojih beležk kot Prejeto z oznako #inbox, tako da jo uporablja tudi Trilium v tvojem računalniku."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Den här servern har ingen inkorg än. Skapa en så visas den överst bland dina anteckningar som Inkorg, med etiketten #inbox, så att Trilium på din dator också använder den."
+          }
+        }
+      }
+    },
+    "Not Now": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ليس الآن"
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не сега"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teď ne"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ikke nu"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicht jetzt"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Όχι τώρα"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not Now"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ahora no"
+          }
+        },
+        "et": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mitte praegu"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ei nyt"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pas maintenant"
+          }
+        },
+        "ga": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ní Anois"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अभी नहीं"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ne sada"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most nem"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non ora"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ne dabar"
+          }
+        },
+        "lv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ne tagad"
+          }
+        },
+        "mt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mhux Issa"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niet nu"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie teraz"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agora Não"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nu acum"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не сейчас"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teraz nie"
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ne zdaj"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inte nu"
+          }
+        }
+      }
     }
   },
   "version": "1.1"

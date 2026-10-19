@@ -32,6 +32,7 @@ final class SettingsCloudSync {
         // The sidebar's notebook order and custom order before build 108 (Trilium holds it now);
         // still synced so a device that has not migrated yet hands its order over.
         "sidebarNotebookOrder", "sidebarNotebookCustomOrder",
+        SavedSearches.storageKey,
     ]
 
     private let store = NSUbiquitousKeyValueStore.default
